@@ -191,18 +191,16 @@ def build_relation_scorecard(target_ticker: str,
         corr_summary = latest_correlation_summary(target_returns, peer_returns, windows)
         lag_result = lagged_directional_test(peer_returns, target_returns, lag=lag)
 
-        # 綜合權重：|相關係數| 與 (勝率-0.5)*2 的平均，並用 -log10(p) 做顯著性加權，
-        # 樣本不足時強制歸零，避免用小樣本雜訊冒充訊號。
         corr_120 = corr_summary.get("corr_120d", np.nan)
         corr_component = abs(corr_120) if pd.notna(corr_120) else 0.0
         win_component = max(0.0, (lag_result.win_rate - 0.5) * 2) if pd.notna(lag_result.win_rate) else 0.0
 
         if lag_result.n < 30:
-            composite_weight = 0.0  # 樣本不足：不給實際數據權重，維持觀察
+            composite_weight = 0.0
         else:
             sig_boost = 1.0
             if pd.notna(lag_result.chi2_pvalue) and lag_result.chi2_pvalue < 0.05:
-                sig_boost = 1.2  # 統計顯著時小幅加權，但不過度放大
+                sig_boost = 1.2
             composite_weight = round(((corr_component + win_component) / 2) * sig_boost, 3)
 
         rows.append({
@@ -230,14 +228,6 @@ def trend_continuation_score(scorecard: pd.DataFrame,
     """
     用計分表（composite_weight）當權重，把「昨晚／今天各關聯股的報酬率方向」
     做加權平均，估計台灣個股隔天趨勢延續的方向與強度。
-
-    latest_peer_returns: {yfinance_ticker: 當日報酬率}，通常是海外收盤後、
-                          台股開盤前，抓最新一天的關聯股報酬率。
-
-    回傳：
-      - direction_score: -1~+1，正值代表偏多方延續，負值代表偏空方延續
-      - confidence: 依「有效樣本權重總和」與計分表整體樣本量給出的信心標籤
-      - contributing: 各關聯股對分數的貢獻明細（方便回頭檢查訊號來源）
     """
     if scorecard.empty:
         return {"direction_score": 0.0, "confidence": "無可用關聯股資料", "contributing": []}
@@ -261,6 +251,7 @@ def trend_continuation_score(scorecard: pd.DataFrame,
             "weight": w,
             "當日報酬率": r,
             "貢獻方向": "多" if sign > 0 else ("空" if sign < 0 else "平"),
+            "lag_n": row.get("lag_n", np.nan),
         })
 
     if weight_total == 0:
@@ -269,7 +260,12 @@ def trend_continuation_score(scorecard: pd.DataFrame,
 
     direction_score = weighted_sum / weight_total
     n_effective = len(contributing)
-    confidence = sample_confidence_label(n_effective) + f"（納入 {n_effective} 檔關聯股）"
+    lag_ns = [c["lag_n"] for c in contributing if pd.notna(c["lag_n"])]
+    min_lag_n = int(min(lag_ns)) if lag_ns else 0
+    confidence = (
+        f"納入 {n_effective} 檔關聯股；其中天數樣本最少的一檔為 {min_lag_n} 天"
+        f"（{sample_confidence_label(min_lag_n)}）"
+    )
 
     return {
         "direction_score": round(float(direction_score), 3),
