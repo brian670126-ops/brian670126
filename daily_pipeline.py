@@ -96,6 +96,8 @@ def run_for_target(target_ticker: str, target_number: int, relation_map: pd.Data
         "target": target_ticker,
         "date": datetime.now().strftime("%Y-%m-%d"),
         "direction_score": score["direction_score"],
+        "score_100": score["score_100"],
+        "label": score["label"],
         "confidence": score["confidence"],
         "top_contributors": score["contributing"][:5],
         "scorecard": scorecard,
@@ -133,10 +135,13 @@ def main():
         )
         report_rows.append({
             "日期": today, "目標股": target_ticker,
-            "趨勢延續分數": result["direction_score"], "信心": result["confidence"],
+            "趨勢延續分數": result["direction_score"],
+            "趨勢延續分數_100": result["score_100"],
+            "趨勢延續標籤": result["label"],
+            "信心": result["confidence"],
             "主要貢獻1": result["top_contributors"][0]["公司名稱"] if result["top_contributors"] else "",
         })
-        log(f"完成：{target_ticker} 趨勢延續分數={result['direction_score']}（{result['confidence']}）")
+        log(f"完成：{target_ticker} 趨勢延續分數={result['score_100']}（{result['label']}，{result['confidence']}）")
 
     if report_rows:
         summary = pd.DataFrame(report_rows)

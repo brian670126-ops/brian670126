@@ -45,6 +45,51 @@ def sample_confidence_label(n: int) -> str:
 
 
 # ----------------------------------------------------------------------
+# 顯示比例尺與級距標籤（2026-09-08 與 Brian 討論定案）
+# ----------------------------------------------------------------------
+# 相關係數 / 趨勢延續分數原本是 -1~+1，顯示時 x100 換成 -100~+100 比較有感覺。
+# 級距每 10 分一階（共 20 階），文字標籤依「強度」分組共用，相關係数跟趨勢延續
+# 分數語意不同（同動強弱 vs 會不會延續、往哪個方向），用兩套標籤。
+# 這只是顯示層的轉換，不影響 composite_weight / 卡方檢定 / 樣本數門檻的計算邏輯。
+
+CORR_TIER_LABELS = [
+    (70, 100, "強烈同向連動"),
+    (40, 70, "中度同向連動"),
+    (10, 40, "弱同向連動"),
+    (-10, 10, "幾乎無關聯"),
+    (-40, -10, "弱反向連動"),
+    (-70, -40, "中度反向連動"),
+    (-100, -70, "強烈反向連動"),
+]
+
+TREND_TIER_LABELS = [
+    (70, 100, "強烈偏多延續"),
+    (40, 70, "中度偏多延續"),
+    (10, 40, "弱偏多延續"),
+    (-10, 10, "方向不明/觀望"),
+    (-40, -10, "弱偏空延續"),
+    (-70, -40, "中度偏空延續"),
+    (-100, -70, "強烈偏空延續"),
+]
+
+
+def scale_to_100(x: float) -> Optional[float]:
+    """-1~+1 轉成 -100~+100，純顯示用，不改變底層統計意義。"""
+    if x is None or (isinstance(x, float) and np.isnan(x)):
+        return None
+    return round(float(x) * 100, 1)
+
+
+def label_for_score(score_100: Optional[float], label_table: list) -> str:
+    if score_100 is None:
+        return "無資料"
+    for lo, hi, label in label_table:
+        if lo <= score_100 <= hi:
+            return label
+    return "無資料"
+
+
+# ----------------------------------------------------------------------
 # 1. 讀取價格資料 → 報酬率序列
 # ----------------------------------------------------------------------
 def load_returns(csv_path: str, datetime_col: str = "datetime",
@@ -73,7 +118,7 @@ def align_returns(target: pd.Series, peer: pd.Series) -> pd.DataFrame:
 # 2. 滾動相關係數（20 / 60 / 120 日）
 # ----------------------------------------------------------------------
 def rolling_correlation(target: pd.Series, peer: pd.Series,
-                         windows=(20, 60, 120)) -> pd.DataFrame:
+                         windows=(10, 20, 60, 120)) -> pd.DataFrame:
     aligned = align_returns(target, peer)
     out = pd.DataFrame(index=aligned.index)
     for w in windows:
@@ -82,7 +127,7 @@ def rolling_correlation(target: pd.Series, peer: pd.Series,
 
 
 def latest_correlation_summary(target: pd.Series, peer: pd.Series,
-                                windows=(20, 60, 120)) -> dict:
+                                windows=(10, 20, 60, 120)) -> dict:
     """回傳目前最新一筆的 20/60/120 日相關係數（給計分表用）。"""
     roll = rolling_correlation(target, peer, windows)
     if roll.empty:
@@ -161,7 +206,7 @@ def build_relation_scorecard(target_ticker: str,
                               relation_df: pd.DataFrame,
                               price_data: dict[str, pd.Series],
                               lag: int = 1,
-                              windows=(20, 60, 120)) -> pd.DataFrame:
+                              windows=(10, 20, 60, 120)) -> pd.DataFrame:
     """
     relation_df: 從 relation_map.csv 讀進來、且已篩選出「編號==目標股所在列」的關聯股清單
                  需要欄位：關聯欄位, 公司名稱, yfinance_ticker, 星等
@@ -203,12 +248,20 @@ def build_relation_scorecard(target_ticker: str,
                 sig_boost = 1.2
             composite_weight = round(((corr_component + win_component) / 2) * sig_boost, 3)
 
+        corr_10 = corr_summary.get("corr_10d", np.nan)
+
         rows.append({
             "關聯欄位": r.get("關聯欄位"),
             "公司名稱": r.get("公司名稱"),
             "股票代號": peer_ticker,
             "原始星等": r.get("星等"),
             **corr_summary,
+            "corr_10d_x100": scale_to_100(corr_10),
+            "corr_10d_註記": "樣本僅10天,樣本<30,僅供觀察,不影響權重",
+            "corr_20d_x100": scale_to_100(corr_summary.get("corr_20d")),
+            "corr_60d_x100": scale_to_100(corr_summary.get("corr_60d")),
+            "corr_120d_x100": scale_to_100(corr_120),
+            "corr_120d_標籤": label_for_score(scale_to_100(corr_120), CORR_TIER_LABELS),
             "lag_n": lag_result.n,
             "lag_win_rate": round(lag_result.win_rate, 3) if pd.notna(lag_result.win_rate) else np.nan,
             "lag_chi2_pvalue": lag_result.chi2_pvalue,
@@ -255,7 +308,8 @@ def trend_continuation_score(scorecard: pd.DataFrame,
         })
 
     if weight_total == 0:
-        return {"direction_score": 0.0, "confidence": "尚無有效權重（樣本不足或缺當日資料）",
+        return {"direction_score": 0.0, "score_100": 0.0, "label": "無足夠資料",
+                "confidence": "尚無有效權重（樣本不足或缺當日資料）",
                 "contributing": contributing}
 
     direction_score = weighted_sum / weight_total
@@ -266,9 +320,12 @@ def trend_continuation_score(scorecard: pd.DataFrame,
         f"納入 {n_effective} 檔關聯股；其中天數樣本最少的一檔為 {min_lag_n} 天"
         f"（{sample_confidence_label(min_lag_n)}）"
     )
+    score_100 = scale_to_100(direction_score)
 
     return {
         "direction_score": round(float(direction_score), 3),
+        "score_100": score_100,
+        "label": label_for_score(score_100, TREND_TIER_LABELS),
         "confidence": confidence,
         "contributing": sorted(contributing, key=lambda x: -abs(x["weight"])),
     }
