@@ -17,7 +17,7 @@ from __future__ import annotations
 import sys
 import time
 import traceback
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -35,12 +35,22 @@ RELATION_MAP_PATH = BASE_DIR / "relation_map_v2.csv"
 WATCHLIST_PATH = BASE_DIR / "watchlist.csv"
 LOG_PATH = BASE_DIR / "daily_pipeline.log"
 
+# 台灣時間(UTC+8)——GitHub Actions 執行機器本身用的是 UTC 系統時間，
+# 若直接用 datetime.now()，遇到執行時間拉長、跨過 UTC 午夜時，「今天」
+# 會被算成前一天，導致報表被存成錯誤日期的檔名（甚至覆蓋掉前一天的報表）。
+# 所以「今天」一律以台灣時間為準，跟伺服器本身在哪個時區、跑多久都無關。
+TAIWAN_TZ = timezone(timedelta(hours=8))
+
+
+def today_taiwan() -> str:
+    return datetime.now(TAIWAN_TZ).strftime("%Y-%m-%d")
+
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 REPORT_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def log(msg: str):
-    line = f"[{datetime.now():%Y-%m-%d %H:%M:%S}] {msg}"
+    line = f"[{datetime.now(TAIWAN_TZ):%Y-%m-%d %H:%M:%S} 台灣時間] {msg}"
     print(line)
     with open(LOG_PATH, "a", encoding="utf-8") as f:
         f.write(line + "\n")
@@ -94,7 +104,7 @@ def run_for_target(target_ticker: str, target_number: int, relation_map: pd.Data
 
     return {
         "target": target_ticker,
-        "date": datetime.now().strftime("%Y-%m-%d"),
+        "date": today_taiwan(),
         "direction_score": score["direction_score"],
         "score_100": score["score_100"],
         "label": score["label"],
@@ -112,7 +122,7 @@ def main():
     watchlist = pd.read_csv(WATCHLIST_PATH)
     relation_map = pd.read_csv(RELATION_MAP_PATH)
 
-    today = datetime.now().strftime("%Y-%m-%d")
+    today = today_taiwan()
     report_rows = []
     log(f"開始執行每日分析，共 {len(watchlist)} 檔目標股")
 
