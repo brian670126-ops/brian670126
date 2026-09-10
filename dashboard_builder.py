@@ -6,7 +6,15 @@ dashboard_builder.py
 可篩選、依台股慣例(紅漲綠跌)上色的單頁 HTML 儀表板，存成：
 
     reports/dashboard_latest.html   —— 每天覆蓋，永遠是「今天」的版本
-    reports/dashboard_YYYY-MM-DD.csv 同一天也會存一份帶日期的存檔版，方便回頭比較
+    reports/dashboard_YYYY-MM-DD.html —— 同一天也存一份帶日期的存檔版，方便回頭比較
+
+內容包含：
+    - 上方三個統計方塊（偏多／觀望／偏空檔數）
+    - 一段「今日總覽」文字摘要 —— 依當天資料自動算出來的（最強偏多/偏空個股、
+      最偏多/偏空的產業），不是每天手動寫的固定文字，資料一換文字就跟著換
+    - 「產業別平均趨勢分數」橫向長條圖 —— 每個產業(編號分類)下所有目標股的
+      平均分數，由高到低排序
+    - 下方可排序／篩選／搜尋的個股明細表
 
 daily_pipeline.py 算完所有目標股之後會自動呼叫 build_and_save_dashboard()，
 不需要人工介入。也可以獨立執行（python dashboard_builder.py）重新產生今天的版本
@@ -499,6 +507,85 @@ footer {
 }
 footer a { color: inherit; }
 
+
+/* ---- narrative summary ---- */
+.narrative {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.narrative p {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.narrative p:last-child { margin-bottom: 0; }
+.narrative .hl-up { color: var(--up-mid); font-weight: 700; }
+.narrative .hl-down { color: var(--down-mid); font-weight: 700; }
+
+/* ---- industry aggregate chart ---- */
+.industry-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+}
+.section-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin: 0 0 12px;
+}
+.ind-row {
+  display: grid;
+  grid-template-columns: 168px 1fr 68px;
+  align-items: center;
+  gap: 10px;
+  padding: 2.5px 0;
+}
+.ind-row .ind-name {
+  font-size: 12px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ind-row .ind-track {
+  position: relative;
+  height: 11px;
+  background: var(--surface-2);
+  border-radius: 3px;
+}
+.ind-row .ind-track .mid {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--border-strong);
+}
+.ind-row .ind-fill {
+  position: absolute;
+  top: 1px; bottom: 1px;
+  border-radius: 2px;
+}
+.ind-row .ind-val {
+  font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+}
+.ind-row .ind-n {
+  color: var(--ink-faint);
+  margin-left: 3px;
+}
+
 @media (max-width: 640px) {
   .stats { grid-template-columns: 1fr; }
   .wrap { padding: 20px 14px 48px; }
@@ -537,6 +624,14 @@ footer a { color: inherit; }
         <div class="lbl">偏空延續<br>（分數 &lt; -10）</div>
       </div>
     </div>
+  </div>
+
+  <div class="narrative" id="narrative"></div>
+
+  <div class="industry-chart-wrap">
+    <div class="section-heading">產業別平均趨勢分數</div>
+    <div class="section-sub">同一個「編號」分類下所有目標股的分數平均，由高到低排序；n 是該產業納入平均的檔數</div>
+    <div id="industry-chart"></div>
   </div>
 
   <div class="controls">
@@ -583,6 +678,7 @@ footer a { color: inherit; }
 <script>
 const DATA = __DATA_JSON__;
 const INDUSTRIES = __INDUSTRIES_JSON__;
+const REPORT_DATE = __REPORT_DATE__;
 
 
 // tier is looked up from the backend's own label string (correlation_engine.py
@@ -629,7 +725,7 @@ const LABEL_ORDER = ['強烈偏多延續','中度偏多延續','弱偏多延續'
 
 function init() {
   // report date
-  document.getElementById('report-date').textContent = __REPORT_DATE__;
+  document.getElementById('report-date').textContent = REPORT_DATE;
 
   // industry options
   const sel = document.getElementById('industry-filter');
@@ -681,7 +777,84 @@ function init() {
   });
 
   renderStats();
+  renderNarrative();
+  renderIndustryChart();
   render();
+}
+
+// ---- 產業別平均分數（依 DATA 動態算，每天資料一換這裡就自動跟著換）----
+function computeIndustryStats() {
+  const groups = {};
+  DATA.forEach(d => {
+    if (!d.industry) return;
+    (groups[d.industry] = groups[d.industry] || []).push(d.score100);
+  });
+  return Object.entries(groups)
+    .map(([industry, scores]) => ({
+      industry,
+      avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+      n: scores.length,
+    }))
+    .sort((a, b) => b.avg - a.avg);
+}
+
+function renderIndustryChart() {
+  const stats = computeIndustryStats();
+  const wrap = document.getElementById('industry-chart');
+  wrap.innerHTML = '';
+  stats.forEach(s => {
+    const pct = Math.min(Math.abs(s.avg), 100) / 100 * 50;
+    const color = s.avg > 10 ? 'var(--up-mid)' : s.avg < -10 ? 'var(--down-mid)' : 'var(--flat)';
+    const row = document.createElement('div');
+    row.className = 'ind-row';
+    row.innerHTML = `
+      <div class="ind-name" title="${escapeHtml(s.industry)}">${escapeHtml(s.industry)}</div>
+      <div class="ind-track">
+        <div class="mid"></div>
+        <div class="ind-fill" style="background:${color};
+          ${s.avg >= 0 ? `left:50%;width:${pct}%;` : `right:50%;width:${pct}%;`}"></div>
+      </div>
+      <div class="ind-val mono">${s.avg > 0 ? '+' : ''}${s.avg.toFixed(0)}<span class="ind-n">n=${s.n}</span></div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+// ---- 自動生成的文字總覽（每天依當天資料重新算，不是手寫的固定文字）----
+function renderNarrative() {
+  const total = DATA.length;
+  const sides = DATA.map(d => tierOf(d.label).side);
+  const up = sides.filter(s => s === 'up').length;
+  const flat = sides.filter(s => s === 'flat').length;
+  const down = sides.filter(s => s === 'down').length;
+
+  let tilt;
+  if (up > down * 1.3) tilt = '整體格局明顯偏多';
+  else if (down > up * 1.3) tilt = '整體格局明顯偏空';
+  else tilt = '整體多空互見，沒有一致方向';
+
+  const bySore = DATA.slice().sort((a, b) => b.score100 - a.score100);
+  const topBull = bySore.slice(0, 3);
+  const topBear = bySore.slice(-3).slice().reverse();
+
+  const fmtStock = d => `${escapeHtml(d.name)}（${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}）`;
+  const bullNames = topBull.map(fmtStock).join('、');
+  const bearNames = topBear.map(fmtStock).join('、');
+
+  const indStats = computeIndustryStats();
+  const indStatsQualified = indStats.filter(s => s.n >= 2); // 只挑至少2檔的產業，單一檔不足以代表整個產業
+  const topBullInd = indStatsQualified.slice(0, 2);
+  const topBearInd = indStatsQualified.slice(-2).slice().reverse();
+  const fmtInd = s => `${escapeHtml(s.industry)}（平均 ${s.avg > 0 ? '+' : ''}${s.avg.toFixed(0)}，${s.n} 檔）`;
+
+  const html = `
+    <p>今天（${escapeHtml(REPORT_DATE)}）追蹤的 ${total} 檔目標股中，
+    <span class="hl-up">偏多 ${up} 檔</span>、觀望 ${flat} 檔、
+    <span class="hl-down">偏空 ${down} 檔</span>，${tilt}。</p>
+    <p>個股方面，今天訊號最偏多的是 ${bullNames}；訊號最偏空的是 ${bearNames}。</p>
+    ${indStatsQualified.length ? `<p>以產業別平均分數來看，${topBullInd.map(fmtInd).join('、')} 相對偏多；${topBearInd.map(fmtInd).join('、')} 相對偏空——完整 ${indStats.length} 個產業的排序見下方圖表。</p>` : ''}
+  `;
+  document.getElementById('narrative').innerHTML = html;
 }
 
 function renderStats() {
