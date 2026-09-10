@@ -27,6 +27,7 @@ from data_fetcher import fetch_yfinance_ohlcv          # noqa: E402
 from correlation_engine import (                        # noqa: E402
     load_returns, build_relation_scorecard, trend_continuation_score,
 )
+from dashboard_builder import build_and_save_dashboard  # noqa: E402
 
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data" / "global"
@@ -158,6 +159,13 @@ def main():
         summary_path = REPORT_DIR / f"summary_{today}.csv"
         summary.to_csv(summary_path, index=False, encoding="utf-8-sig")
         log(f"每日摘要已存到 {summary_path}")
+
+        try:
+            dashboard_path = build_and_save_dashboard(report_rows, today)
+            log(f"好讀版看板已存到 {dashboard_path}（同一份也存了 dashboard_{today}.html）")
+        except Exception as e:  # noqa: BLE001
+            log(f"⚠️ 產生看板失敗（不影響報表本身）：{e}\n{traceback.format_exc()}")
+
     log("本次執行完畢\n")
 
 
