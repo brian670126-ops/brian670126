@@ -1,0 +1,700 @@
+<!doctype html>
+<title>台股趨勢延續看板</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #f0ede6;
+  --ink: #17181a;
+  --ink-muted: #5c5f63;
+  --ink-faint: #8a8d90;
+  --border: rgba(23,24,26,0.10);
+  --border-strong: rgba(23,24,26,0.18);
+  --accent: #1f3d52;
+  --accent-ink: #ffffff;
+  --accent-soft: #e7ecf0;
+
+  --up-weak: #f0b3ac;
+  --up-mid: #d24c3d;
+  --up-strong: #932218;
+  --up-weak-bg: #fbeae7;
+  --up-mid-bg: #f8ded9;
+  --up-strong-bg: #f4cec7;
+
+  --down-weak: #a9d1ac;
+  --down-mid: #3f8f4d;
+  --down-strong: #1e5c2b;
+  --down-weak-bg: #e6f2e5;
+  --down-mid-bg: #dcedda;
+  --down-strong-bg: #cfe4cd;
+
+  --flat: #83878c;
+  --flat-bg: #eceae5;
+
+  --shadow: 0 1px 2px rgba(23,24,26,0.06), 0 8px 24px rgba(23,24,26,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121316;
+    --surface: #1b1d21;
+    --surface-2: #202226;
+    --ink: #f0f1f2;
+    --ink-muted: #a6a9ad;
+    --ink-faint: #797d82;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.16);
+    --accent: #86aecb;
+    --accent-ink: #0e1720;
+    --accent-soft: #22303b;
+
+    --up-weak: #7e3d37;
+    --up-mid: #c8564a;
+    --up-strong: #ef8578;
+    --up-weak-bg: #2c1c1b;
+    --up-mid-bg: #3a211f;
+    --up-strong-bg: #4a2521;
+
+    --down-weak: #3c5f42;
+    --down-mid: #4f9c5c;
+    --down-strong: #7ed98d;
+    --down-weak-bg: #1a2620;
+    --down-mid-bg: #1e2f22;
+    --down-strong-bg: #223a26;
+
+    --flat: #9298a0;
+    --flat-bg: #24262a;
+
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121316;
+  --surface: #1b1d21;
+  --surface-2: #202226;
+  --ink: #f0f1f2;
+  --ink-muted: #a6a9ad;
+  --ink-faint: #797d82;
+  --border: rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.16);
+  --accent: #86aecb;
+  --accent-ink: #0e1720;
+  --accent-soft: #22303b;
+
+  --up-weak: #7e3d37;
+  --up-mid: #c8564a;
+  --up-strong: #ef8578;
+  --up-weak-bg: #2c1c1b;
+  --up-mid-bg: #3a211f;
+  --up-strong-bg: #4a2521;
+
+  --down-weak: #3c5f42;
+  --down-mid: #4f9c5c;
+  --down-strong: #7ed98d;
+  --down-weak-bg: #1a2620;
+  --down-mid-bg: #1e2f22;
+  --down-strong-bg: #223a26;
+
+  --flat: #9298a0;
+  --flat-bg: #24262a;
+
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+/* ---- header ---- */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+.title-block h1 {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.title-block p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.header-meta {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+.header-meta .date {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.header-meta .date .mono { font-weight: 600; }
+
+/* ---- stat tiles ---- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.stat::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--stripe, var(--flat));
+}
+.stat.up { --stripe: var(--up-mid); }
+.stat.flat { --stripe: var(--flat); }
+.stat.down { --stripe: var(--down-mid); }
+.stat .num {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.stat .lbl {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+.stat.up .num { color: var(--up-mid); }
+.stat.down .num { color: var(--down-mid); }
+
+/* ---- controls ---- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.controls input[type="search"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-family: inherit;
+}
+.controls select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: inherit;
+}
+.controls input::placeholder { color: var(--ink-faint); }
+.controls input:focus, .controls select:focus, .chip:focus-visible, th button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--dotcolor, var(--ink-faint));
+  flex: none;
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.result-count {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 2px 2px 10px;
+}
+
+/* ---- table ---- */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 880px;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+  text-align: left;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+thead th button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  color: inherit;
+}
+thead th button .arrow { opacity: 0; font-size: 10px; }
+thead th button[aria-sort]:not([aria-sort="none"]) .arrow,
+thead th button:hover .arrow { opacity: 1; }
+tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.num-col { text-align: right; }
+.ticker-cell .code { font-weight: 600; font-size: 13px; }
+.ticker-cell .industry { color: var(--ink-faint); font-size: 11.5px; margin-top: 1px; }
+.name-cell .company { font-weight: 500; }
+
+/* diverging bar */
+.bar-cell { width: 168px; }
+.bar-track {
+  position: relative;
+  height: 18px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-track .mid {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--border-strong);
+}
+.bar-fill {
+  position: absolute;
+  top: 2px; bottom: 2px;
+  border-radius: 3px;
+  background: var(--barcolor, var(--flat));
+}
+.score-num {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 42px;
+  display: inline-block;
+  text-align: right;
+}
+
+/* badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--badgebg, var(--flat-bg));
+  color: var(--badgefg, var(--flat));
+}
+
+/* confidence */
+.conf-cell { max-width: 260px; }
+.conf-main { font-size: 12.5px; color: var(--ink-muted); }
+.conf-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+.top-contrib { font-size: 12.5px; color: var(--ink-muted); }
+
+.empty-row td {
+  text-align: center;
+  padding: 40px 12px;
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
+/* legend */
+.legend {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.legend .group { display: flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.legend-title { font-weight: 600; color: var(--ink-faint); }
+
+footer {
+  margin-top: 26px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+footer a { color: inherit; }
+
+@media (max-width: 640px) {
+  .stats { grid-template-columns: 1fr; }
+  .wrap { padding: 20px 14px 48px; }
+}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>台股趨勢延續看板</h1>
+      <p>產業關聯量化追蹤・97 檔目標股・每個交易日台灣時間 07:30 自動更新</p>
+    </div>
+    <div class="header-meta">
+      <div class="date">今日資料日期：<span class="mono" id="report-date">—</span></div>
+      <div>依「趨勢延續分數」排序・點欄名可改排序</div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat up">
+      <div>
+        <div class="num" id="stat-up">–</div>
+        <div class="lbl">偏多延續<br>（分數 &gt; 10）</div>
+      </div>
+    </div>
+    <div class="stat flat">
+      <div>
+        <div class="num" id="stat-flat">–</div>
+        <div class="lbl">方向不明／觀望<br>（-10 ~ 10）</div>
+      </div>
+    </div>
+    <div class="stat down">
+      <div>
+        <div class="num" id="stat-down">–</div>
+        <div class="lbl">偏空延續<br>（分數 &lt; -10）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="搜尋股票代號、公司名稱或產業…">
+    <select id="industry-filter">
+      <option value="">全部產業</option>
+    </select>
+    <div class="chips" id="label-chips" role="group" aria-label="依標籤篩選"></div>
+  </div>
+  <div class="result-count" id="result-count"></div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px">#</th>
+          <th data-key="ticker">股票<button data-key="ticker"><span>股票／產業</span><span class="arrow">▾</span></button></th>
+          <th data-key="score100" style="width:184px"><button data-key="score100"><span>趨勢延續分數</span><span class="arrow">▾</span></button></th>
+          <th data-key="label"><button data-key="label"><span>標籤</span><span class="arrow">▾</span></button></th>
+          <th data-key="confidence">信心說明</th>
+          <th data-key="top">主要貢獻</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span class="legend-title">分數級距（台股慣例：紅漲・綠跌）</span>
+    <span class="group"><span class="swatch" style="background:var(--up-strong)"></span>強烈偏多 (70~100)</span>
+    <span class="group"><span class="swatch" style="background:var(--up-mid)"></span>中度偏多 (40~70)</span>
+    <span class="group"><span class="swatch" style="background:var(--up-weak)"></span>弱偏多 (10~40)</span>
+    <span class="group"><span class="swatch" style="background:var(--flat)"></span>方向不明 (-10~10)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-weak)"></span>弱偏空 (-40~-10)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-mid)"></span>中度偏空 (-70~-40)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-strong)"></span>強烈偏空 (-100~-70)</span>
+  </div>
+
+  <footer>
+    分數為「趨勢延續分數」（-100~+100），依產業關聯股當日同向表現加權計算，僅供輔助參考，非投資建議；樣本數不足 30 天的關聯股不計入權重。信心說明包含兩件事：納入的關聯股檔數，以及這些關聯股各自的天數樣本是否充足。
+  </footer>
+</div>
+
+<script>
+const DATA = [{"ticker": "3661.TW", "name": "世芯-KY", "industry": "AI ASIC", "score100": -25.7, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 247 天（樣本充足（>200，具統計意義））", "top": "穎崴"}, {"ticker": "3443.TW", "name": "創意", "industry": "AI ASIC", "score100": -10.0, "label": "方向不明/觀望", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "力旺"}, {"ticker": "3035.TW", "name": "智原", "industry": "AI ASIC", "score100": -13.7, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "M31"}, {"ticker": "8227.TW", "name": "巨有科技", "industry": "AI ASIC", "score100": -12.2, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": "M31"}, {"ticker": "7707.TW", "name": "益芯科", "industry": "AI ASIC", "score100": -11.9, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 237 天（樣本充足（>200，具統計意義））", "top": "力旺"}, {"ticker": "7796.TW", "name": "擷發科", "industry": "AI ASIC", "score100": 2.6, "label": "方向不明/觀望", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 236 天（樣本充足（>200，具統計意義））", "top": "M31"}, {"ticker": "2454.TW", "name": "聯發科", "industry": "AI ASIC", "score100": -11.3, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 232 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "2379.TW", "name": "瑞昱", "industry": "AI ASIC", "score100": -25.6, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 237 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "3034.TW", "name": "聯詠", "industry": "AI ASIC", "score100": -13.3, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": "台積電"}, {"ticker": "8054.TW", "name": "安國", "industry": "AI ASIC", "score100": -19.6, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 238 天（樣本充足（>200，具統計意義））", "top": "穎崴"}, {"ticker": "6695.TW", "name": "芯鼎", "industry": "AI ASIC", "score100": -11.3, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 246 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "2388.TW", "name": "威盛", "industry": "AI ASIC", "score100": -12.5, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "2363.TW", "name": "矽統", "industry": "AI ASIC", "score100": -14.9, "label": "弱偏空延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 246 天（樣本充足（>200，具統計意義））", "top": "M31"}, {"ticker": "3041.TW", "name": "揚智", "industry": "AI ASIC", "score100": -8.7, "label": "方向不明/觀望", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "M31"}, {"ticker": "8299.TW", "name": "群聯", "industry": "NAND／AI SSD", "score100": -36.2, "label": "弱偏空延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "創見"}, {"ticker": "2337.TW", "name": "旺宏", "industry": "NOR Flash", "score100": -25.9, "label": "弱偏空延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 252 天（樣本充足（>200，具統計意義））", "top": "Infineon"}, {"ticker": "2344.TW", "name": "華邦電", "industry": "NOR Flash", "score100": -31.5, "label": "弱偏空延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "兆易創新"}, {"ticker": "6239.TW", "name": "力成", "industry": "Memory OSAT", "score100": -7.2, "label": "方向不明/觀望", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 102 天（樣本尚可（100–200，具參考意義））", "top": "華邦電"}, {"ticker": "2329.TW", "name": "華泰", "industry": "Memory OSAT", "score100": -8.8, "label": "方向不明/觀望", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 104 天（樣本尚可（100–200，具參考意義））", "top": "南亞科"}, {"ticker": "8110.TW", "name": "華東", "industry": "Memory OSAT", "score100": -1.7, "label": "方向不明/觀望", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 102 天（樣本尚可（100–200，具參考意義））", "top": "華邦電"}, {"ticker": "8150.TW", "name": "南茂", "industry": "Memory OSAT", "score100": -12.4, "label": "弱偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 105 天（樣本尚可（100–200，具參考意義））", "top": "南亞科"}, {"ticker": "6147.TW", "name": "頎邦", "industry": "DDIC／COF封測", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "瑞鼎"}, {"ticker": "2449.TW", "name": "京元電", "industry": "AI ASIC", "score100": -14.8, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 250 天（樣本充足（>200，具統計意義））", "top": "世芯"}, {"ticker": "6257.TW", "name": "矽格", "industry": "SoC／Connectivity", "score100": -15.4, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 249 天（樣本充足（>200，具統計意義））", "top": "旺矽"}, {"ticker": "3264.TW", "name": "欣銓", "industry": "AI晶片測試", "score100": -13.6, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 255 天（樣本充足（>200，具統計意義））", "top": "世芯"}, {"ticker": "6223.TW", "name": "旺矽", "industry": "AI ASIC", "score100": -60.9, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "MJC"}, {"ticker": "6510.TW", "name": "精測", "industry": "AI ASIC", "score100": -71.2, "label": "強烈偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "雍智"}, {"ticker": "6515.TW", "name": "穎崴", "industry": "AI ASIC", "score100": -50.1, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "6488.TW", "name": "環球晶", "industry": "半導體矽晶圓", "score100": -41.7, "label": "中度偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "Siltronic"}, {"ticker": "5483.TW", "name": "中美晶", "industry": "半導體矽晶圓", "score100": -42.9, "label": "中度偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 234 天（樣本充足（>200，具統計意義））", "top": "SUMCO"}, {"ticker": "3037.TW", "name": "欣興", "industry": "ABF載板", "score100": -32.7, "label": "弱偏空延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": "Ibiden"}, {"ticker": "8046.TW", "name": "南電", "industry": "ABF載板", "score100": -22.7, "label": "弱偏空延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "AT&S"}, {"ticker": "3189.TW", "name": "景碩", "industry": "ABF載板", "score100": -36.8, "label": "弱偏空延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 236 天（樣本充足（>200，具統計意義））", "top": "AT&S"}, {"ticker": "1815.TW", "name": "富喬", "industry": "玻纖布", "score100": -52.5, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": "建榮"}, {"ticker": "1802.TW", "name": "台玻", "industry": "玻纖布", "score100": -50.1, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "建榮"}, {"ticker": "5475.TW", "name": "德宏", "industry": "玻纖布", "score100": -54.7, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": "建榮"}, {"ticker": "1446.TW", "name": "宏和", "industry": "玻纖布", "score100": -48.3, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 219 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "8358.TW", "name": "金居", "industry": "HVLP銅箔", "score100": -49.5, "label": "中度偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 245 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "1303.TW", "name": "南亞", "industry": "HVLP銅箔", "score100": -57.8, "label": "中度偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": "三井金屬"}, {"ticker": "4989.TW", "name": "榮科", "industry": "HVLP銅箔", "score100": -39.9, "label": "弱偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "2383.TW", "name": "台光電", "industry": "玻纖布", "score100": -45.6, "label": "中度偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 252 天（樣本充足（>200，具統計意義））", "top": "金像電"}, {"ticker": "6274.TW", "name": "台燿", "industry": "玻纖布", "score100": -44.0, "label": "中度偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 253 天（樣本充足（>200，具統計意義））", "top": "金居"}, {"ticker": "6213.TW", "name": "聯茂", "industry": "CCL", "score100": -20.7, "label": "弱偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "富喬"}, {"ticker": "2368.TW", "name": "金像電", "industry": "HVLP銅箔", "score100": -30.3, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "3044.TW", "name": "健鼎", "industry": "AI PCB", "score100": -21.5, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "2313.TW", "name": "華通", "industry": "AI PCB", "score100": -33.4, "label": "弱偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 247 天（樣本充足（>200，具統計意義））", "top": "台燿"}, {"ticker": "2327.TW", "name": "國巨", "industry": "被動元件／MLCC", "score100": -54.6, "label": "中度偏空延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 228 天（樣本充足（>200，具統計意義））", "top": "凱美"}, {"ticker": "2492.TW", "name": "華新科", "industry": "被動元件／MLCC", "score100": -63.4, "label": "中度偏空延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 231 天（樣本充足（>200，具統計意義））", "top": "凱美"}, {"ticker": "6173.TW", "name": "信昌電", "industry": "被動元件／MLCC", "score100": -64.0, "label": "中度偏空延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 238 天（樣本充足（>200，具統計意義））", "top": "凱美"}, {"ticker": "2382.TW", "name": "廣達", "industry": "AI Server", "score100": -41.5, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "6669.TW", "name": "緯穎", "industry": "AI Server", "score100": -50.3, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 246 天（樣本充足（>200，具統計意義））", "top": "晟銘電"}, {"ticker": "2376.TW", "name": "技嘉", "industry": "AI Server", "score100": -43.1, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "鴻海"}, {"ticker": "2377.TW", "name": "微星", "industry": "AI Server", "score100": -41.4, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 233 天（樣本充足（>200，具統計意義））", "top": "鴻海"}, {"ticker": "2357.TW", "name": "華碩", "industry": "AI Server", "score100": -50.8, "label": "中度偏空延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 230 天（樣本充足（>200，具統計意義））", "top": "Lenovo"}, {"ticker": "3324.TW", "name": "雙鴻", "industry": "AI散熱／液冷", "score100": -80.1, "label": "強烈偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 231 天（樣本充足（>200，具統計意義））", "top": "建準"}, {"ticker": "3017.TW", "name": "奇鋐", "industry": "AI散熱／液冷", "score100": -84.0, "label": "強烈偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "建準"}, {"ticker": "3653.TW", "name": "健策", "industry": "AI散熱／液冷", "score100": -83.9, "label": "強烈偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": "建準"}, {"ticker": "3081.TW", "name": "聯亞", "industry": "矽光子／CPO", "score100": -29.9, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric"}, {"ticker": "2455.TW", "name": "全新", "industry": "矽光子／CPO", "score100": -29.9, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric"}, {"ticker": "4991.TW", "name": "環宇-KY", "industry": "矽光子／CPO", "score100": -33.8, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric"}, {"ticker": "4971.TW", "name": "IET-KY", "industry": "矽光子／CPO", "score100": -40.4, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 245 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric"}, {"ticker": "3105.TW", "name": "穩懋", "industry": "矽光子／CPO", "score100": -42.6, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric"}, {"ticker": "8086.TW", "name": "宏捷科", "industry": "矽光子／CPO", "score100": -47.6, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 234 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric"}, {"ticker": "3363.TW", "name": "上詮", "industry": "矽光子／CPO", "score100": -26.6, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "3163.TW", "name": "波若威", "industry": "矽光子／CPO", "score100": -25.2, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "4979.TW", "name": "華星光", "industry": "矽光子／CPO", "score100": -23.1, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "3450.TW", "name": "聯鈞", "industry": "矽光子／CPO", "score100": -45.0, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric"}, {"ticker": "4977.TW", "name": "眾達-KY", "industry": "矽光子／CPO", "score100": -26.2, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 240 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "6451.TW", "name": "訊芯-KY", "industry": "矽光子／CPO", "score100": -15.0, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "3711.TW", "name": "日月光", "industry": "矽光子／CPO", "score100": -43.1, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 233 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric"}, {"ticker": "2330.TW", "name": "台積電", "industry": "半導體矽晶圓", "score100": -51.0, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 230 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric"}, {"ticker": "3008.TW", "name": "大立光", "industry": "光學鏡頭－手機", "score100": -39.9, "label": "弱偏空延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 239 天（樣本充足（>200，具統計意義））", "top": "今國光"}, {"ticker": "3362.TW", "name": "先進光", "industry": "光學鏡頭－手機", "score100": -31.4, "label": "弱偏空延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 238 天（樣本充足（>200，具統計意義））", "top": "今國光"}, {"ticker": "3406.TW", "name": "玉晶光", "industry": "光學鏡頭－手機", "score100": -41.9, "label": "中度偏空延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": "亞光"}, {"ticker": "4585.TW", "name": "達明", "industry": "機器人／Physical AI", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 237 天（樣本充足（>200，具統計意義））", "top": "所羅門"}, {"ticker": "6415.TW", "name": "矽力*-KY", "industry": "AI機櫃IC－電源／高速網通", "score100": -14.1, "label": "弱偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "台達電"}, {"ticker": "6526.TW", "name": "達發", "industry": "AI機櫃IC－電源／高速網通", "score100": -46.1, "label": "中度偏空延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "聯發科"}, {"ticker": "3231.TW", "name": "緯創", "industry": "記憶體模組", "score100": -24.3, "label": "弱偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 100 天（樣本尚可（100–200，具參考意義））", "top": "南亞科"}, {"ticker": "2615.TW", "name": "萬海", "industry": "貨櫃／航運電子關聯", "score100": -64.8, "label": "中度偏空延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 235 天（樣本充足（>200，具統計意義））", "top": "陽明"}, {"ticker": "8039.TW", "name": "台虹", "industry": "電源／AI機櫃", "score100": -64.6, "label": "中度偏空延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 250 天（樣本充足（>200，具統計意義））", "top": "台光電"}, {"ticker": "2301.TW", "name": "光寶科", "industry": "電子製造／零組件", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 221 天（樣本充足（>200，具統計意義））", "top": "台達電"}, {"ticker": "2464.TW", "name": "盟立", "industry": "電子材料／零組件", "score100": -41.1, "label": "中度偏空延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 249 天（樣本充足（>200，具統計意義））", "top": "廣運"}, {"ticker": "2059.TW", "name": "川湖", "industry": "電子零組件／連接器", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 246 天（樣本充足（>200，具統計意義））", "top": "勤誠"}, {"ticker": "6214.TW", "name": "精誠", "industry": "電子零組件／連接器", "score100": 90.7, "label": "強烈偏多延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 215 天（樣本充足（>200，具統計意義））", "top": "零壹"}, {"ticker": "2395.TW", "name": "研華", "industry": "電子零組件", "score100": -51.7, "label": "中度偏空延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 245 天（樣本充足（>200，具統計意義））", "top": "樺漢"}, {"ticker": "2474.TW", "name": "可成", "industry": "AI Server機構件／金屬機殼", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 227 天（樣本充足（>200，具統計意義））", "top": "晟銘電"}, {"ticker": "8103.TW", "name": "瀚荃", "industry": "AI Server電源／連接器", "score100": -59.9, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 244 天（樣本充足（>200，具統計意義））", "top": "台達電"}, {"ticker": "6531.TW", "name": "愛普", "industry": "矽電容／Silicon Capacitor", "score100": -23.1, "label": "弱偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 103 天（樣本尚可（100–200，具參考意義））", "top": "Samsung Electro-Mechanics"}, {"ticker": "6770.TW", "name": "力積電", "industry": "矽電容／Silicon Capacitor", "score100": -33.1, "label": "弱偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 103 天（樣本尚可（100–200，具參考意義））", "top": "Murata"}, {"ticker": "2303.TW", "name": "聯電", "industry": "矽電容／Silicon Capacitor", "score100": -19.4, "label": "弱偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 101 天（樣本尚可（100–200，具參考意義））", "top": "TDK"}, {"ticker": "2421.TW", "name": "建準", "industry": "AI散熱／液冷", "score100": -72.8, "label": "強烈偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 243 天（樣本充足（>200，具統計意義））", "top": "台達電"}, {"ticker": "4931.TW", "name": "新盛力", "industry": "大電流連接器／AI電源", "score100": -77.8, "label": "強烈偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 247 天（樣本充足（>200，具統計意義））", "top": ""}, {"ticker": "6830.TW", "name": "汎銓", "industry": "半導體材料分析／檢測", "score100": 2.3, "label": "方向不明/觀望", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "日月光"}, {"ticker": "7711.TW", "name": "永擎", "industry": "AI伺服器主板／系統", "score100": -57.7, "label": "中度偏空延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 180 天（樣本尚可（100–200，具參考意義））", "top": "華擎"}, {"ticker": "3234.TW", "name": "光環", "industry": "InP光通訊代工", "score100": -43.2, "label": "中度偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 250 天（樣本充足（>200，具統計意義））", "top": "華星光"}, {"ticker": "6291.TW", "name": "沛亨", "industry": "光纖／光通訊", "score100": 15.9, "label": "弱偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "上詮"}, {"ticker": "4908.TW", "name": "前鼎", "industry": "電子零組件／連接器", "score100": -41.9, "label": "中度偏空延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 252 天（樣本充足（>200，具統計意義））", "top": "建準"}];
+const INDUSTRIES = ["ABF載板", "AI ASIC", "AI PCB", "AI Server", "AI Server機構件／金屬機殼", "AI Server電源／連接器", "AI伺服器主板／系統", "AI散熱／液冷", "AI晶片測試", "AI機櫃IC－電源／高速網通", "CCL", "DDIC／COF封測", "HVLP銅箔", "InP光通訊代工", "Memory OSAT", "NAND／AI SSD", "NOR Flash", "SoC／Connectivity", "光學鏡頭－手機", "光纖／光通訊", "半導體材料分析／檢測", "半導體矽晶圓", "大電流連接器／AI電源", "機器人／Physical AI", "玻纖布", "矽光子／CPO", "矽電容／Silicon Capacitor", "被動元件／MLCC", "記憶體模組", "貨櫃／航運電子關聯", "電子材料／零組件", "電子製造／零組件", "電子零組件", "電子零組件／連接器", "電源／AI機櫃"];
+
+
+// tier is looked up from the backend's own label string (correlation_engine.py
+// label_for_score), never re-derived from the raw score — that guarantees the
+// dashboard's color/side always agrees with the report even at tier boundaries.
+const LABEL_TO_TIER = {
+  '強烈偏多延續': {key:'up-strong', side:'up'},
+  '中度偏多延續': {key:'up-mid', side:'up'},
+  '弱偏多延續':   {key:'up-weak', side:'up'},
+  '方向不明/觀望': {key:'flat', side:'flat'},
+  '弱偏空延續':   {key:'down-weak', side:'down'},
+  '中度偏空延續': {key:'down-mid', side:'down'},
+  '強烈偏空延續': {key:'down-strong', side:'down'},
+};
+function tierOf(label) {
+  return LABEL_TO_TIER[label] || {key:'flat', side:'flat'};
+}
+const TIER_META = {
+  'up-strong':  {barVar:'--up-strong',  bgVar:'--up-strong-bg', fgVar:'--up-strong'},
+  'up-mid':     {barVar:'--up-mid',     bgVar:'--up-mid-bg',    fgVar:'--up-mid'},
+  'up-weak':    {barVar:'--up-weak',    bgVar:'--up-weak-bg',   fgVar:'--up-mid'},
+  'flat':       {barVar:'--flat',       bgVar:'--flat-bg',      fgVar:'--flat'},
+  'down-weak':  {barVar:'--down-weak',  bgVar:'--down-weak-bg', fgVar:'--down-mid'},
+  'down-mid':   {barVar:'--down-mid',   bgVar:'--down-mid-bg',  fgVar:'--down-mid'},
+  'down-strong':{barVar:'--down-strong',bgVar:'--down-strong-bg',fgVar:'--down-strong'},
+};
+
+// split confidence string "納入 X 檔關聯股；其中...(...)" into two lines
+function splitConfidence(s) {
+  if (!s) return {main:'', sub:''};
+  const parts = s.split('；');
+  return {main: parts[0] || '', sub: parts.slice(1).join('；')};
+}
+
+let state = {
+  search: '',
+  industry: '',
+  labelFilter: null, // 'up' | 'flat' | 'down' | null
+  sortKey: 'score100',
+  sortDir: 'desc',
+};
+
+const LABEL_ORDER = ['強烈偏多延續','中度偏多延續','弱偏多延續','方向不明/觀望','弱偏空延續','中度偏空延續','強烈偏空延續'];
+
+function init() {
+  // report date
+  document.getElementById('report-date').textContent = "2026-09-10";
+
+  // industry options
+  const sel = document.getElementById('industry-filter');
+  INDUSTRIES.forEach(ind => {
+    const opt = document.createElement('option');
+    opt.value = ind; opt.textContent = ind;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => { state.industry = sel.value; render(); });
+
+  document.getElementById('search').addEventListener('input', (e) => {
+    state.search = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  const chipsWrap = document.getElementById('label-chips');
+  const chipDefs = [
+    {key:'up', label:'偏多', color:'var(--up-mid)'},
+    {key:'flat', label:'觀望', color:'var(--flat)'},
+    {key:'down', label:'偏空', color:'var(--down-mid)'},
+  ];
+  chipDefs.forEach(cd => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.style.setProperty('--dotcolor', cd.color);
+    b.innerHTML = `<span class="dot"></span>${cd.label}`;
+    b.addEventListener('click', () => {
+      state.labelFilter = (state.labelFilter === cd.key) ? null : cd.key;
+      [...chipsWrap.children].forEach(c => c.setAttribute('aria-pressed', 'false'));
+      if (state.labelFilter) b.setAttribute('aria-pressed', 'true');
+      render();
+    });
+    chipsWrap.appendChild(b);
+  });
+
+  document.querySelectorAll('th button[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      if (state.sortKey === key) {
+        state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        state.sortKey = key;
+        state.sortDir = (key === 'score100') ? 'desc' : 'asc';
+      }
+      render();
+    });
+  });
+
+  renderStats();
+  render();
+}
+
+function renderStats() {
+  const sides = DATA.map(d => tierOf(d.label).side);
+  const up = sides.filter(s => s === 'up').length;
+  const flat = sides.filter(s => s === 'flat').length;
+  const down = sides.filter(s => s === 'down').length;
+  document.getElementById('stat-up').textContent = up;
+  document.getElementById('stat-flat').textContent = flat;
+  document.getElementById('stat-down').textContent = down;
+}
+
+function matches(d) {
+  if (state.industry && d.industry !== state.industry) return false;
+  if (state.labelFilter) {
+    const side = tierOf(d.label).side;
+    if (side !== state.labelFilter) return false;
+  }
+  if (state.search) {
+    const hay = (d.ticker + ' ' + d.name + ' ' + d.industry).toLowerCase();
+    if (!hay.includes(state.search)) return false;
+  }
+  return true;
+}
+
+function sortRows(rows) {
+  const {sortKey, sortDir} = state;
+  const dir = sortDir === 'desc' ? -1 : 1;
+  return rows.slice().sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === 'label') {
+      av = LABEL_ORDER.indexOf(a.label); bv = LABEL_ORDER.indexOf(b.label);
+    }
+    if (sortKey === 'ticker') {
+      av = a.industry + a.ticker; bv = b.industry + b.ticker;
+    }
+    if (typeof av === 'string') return av.localeCompare(bv, 'zh-Hant') * dir;
+    return (av - bv) * dir;
+  });
+}
+
+function render() {
+  const filtered = DATA.filter(matches);
+  const sorted = sortRows(filtered);
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  document.getElementById('result-count').textContent =
+    `顯示 ${sorted.length} / ${DATA.length} 檔`;
+
+  document.querySelectorAll('th button[data-key]').forEach(btn => {
+    btn.setAttribute('aria-sort', btn.dataset.key === state.sortKey
+      ? (state.sortDir === 'desc' ? 'descending' : 'ascending') : 'none');
+    const arrow = btn.querySelector('.arrow');
+    if (btn.dataset.key === state.sortKey) {
+      arrow.textContent = state.sortDir === 'desc' ? '▾' : '▴';
+    }
+  });
+
+  if (!sorted.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    tr.innerHTML = `<td colspan="6">沒有符合條件的股票</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  sorted.forEach((d, i) => {
+    const tier = tierOf(d.label);
+    const meta = TIER_META[tier.key];
+    const conf = splitConfidence(d.confidence);
+    const pct = Math.min(Math.abs(d.score100), 100) / 100 * 50; // half-width max
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono" style="color:var(--ink-faint)">${i + 1}</td>
+      <td>
+        <div class="ticker-cell">
+          <div class="code mono">${d.ticker.replace('.TW','')} <span class="name-cell company">${escapeHtml(d.name)}</span></div>
+          <div class="industry">${escapeHtml(d.industry)}</div>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="score-num mono" style="color:var(--${meta.fgVar.slice(2)})">${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}</span>
+          <div class="bar-track" style="flex:1">
+            <div class="mid"></div>
+            <div class="bar-fill" style="background:var(${meta.barVar});
+              ${d.score100 >= 0
+                ? `left:50%; width:${pct}%;`
+                : `right:50%; width:${pct}%;`}"></div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge" style="--badgebg:var(${meta.bgVar});--badgefg:var(${meta.fgVar})">${d.label}</span></td>
+      <td class="conf-cell">
+        <div class="conf-main">${escapeHtml(conf.main)}</div>
+        <div class="conf-sub">${escapeHtml(conf.sub)}</div>
+      </td>
+      <td class="top-contrib">${escapeHtml(d.top)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+init();
+</script>
