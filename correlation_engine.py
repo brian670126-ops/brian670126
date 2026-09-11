@@ -7,7 +7,7 @@ correlation_engine.py
 
 延續 Brian 既有回測框架的統計原則：
 - 樣本數門檻：<30=僅供觀察；30–100=可謹慎推論方向；>100–200=具參考意義
-- 用卡方檢定驗證方向一致性是否顯著偏離隨機
+- 用卡方檢定驗證方向一致性github.com/brian670126-ops/brian670126是否顯著偏離隨機
 - 極端事件（樣本太少）用合併分組處理，而不是硬湊樣本數
 
 輸入資料格式（沿用你既有的 CSV 慣例）：
@@ -329,6 +329,100 @@ def trend_continuation_score(scorecard: pd.DataFrame,
         "confidence": confidence,
         "contributing": sorted(contributing, key=lambda x: -abs(x["weight"])),
     }
+
+
+# ----------------------------------------------------------------------
+# 6. 均線二次確認濾網（只套用在「強烈偏多／強烈偏空延續」這兩個最極端的訊號）
+#    2026-09-11 與 Brian 討論定案：trend_continuation_score 是「當天各關聯股
+#    方向」加權出來的即時訊號，分數再怎麼極端，也不保證目標股「自己的價格」
+#    已經真的轉向。用目標股自己的 5日／20日均線做一次事後確認，避免把分數
+#    雖然極端、但股價自己根本還沒轉強（或轉弱）的標的，當成可以推薦的標的。
+#    只套用在最極端的兩端，中度／弱訊號不套用——理由見
+#    claude 專案文件 trend_score_interpretation_framework.md 第 5 節的延伸決議。
+# ----------------------------------------------------------------------
+def load_close_prices(csv_path: str, datetime_col: str = "datetime",
+                       price_col: str = "close") -> pd.Series:
+    """讀取 OHLCV CSV，回傳以 datetime 為 index 的『收盤價』序列（不是報酬率）。
+    均線要算在實際價格上，不是報酬率上，所以跟 load_returns 分開一支函式。"""
+    df = pd.read_csv(csv_path, parse_dates=[datetime_col])
+    df = df.set_index(datetime_col).sort_index()
+    price = df[price_col].dropna()
+    price.name = price_col
+    return price
+
+
+def ma_alignment_check(close: pd.Series, short_window: int = 5,
+                        long_window: int = 20) -> dict:
+    """
+    用目標股自己的收盤價，算出最新一天的均線狀態：
+      - 多頭排列：5日均線 > 20日均線
+      - 空頭排列：5日均線 < 20日均線
+      - 站上/跌破5日線：今天收盤價 相對 5日均線 的位置
+    這支函式只描述「均線現在長什麼樣子」，不含買賣建議——建議判斷交給
+    apply_directional_filter，跟趨勢延續分數的方向合併判斷。
+    """
+    close = close.dropna()
+    if len(close) < long_window:
+        return {
+            "收盤價": None, "5日均線": None, "20日均線": None,
+            "均線排列": "資料不足",
+            "均線排列註記": f"收盤價樣本只有 {len(close)} 天，不足 {long_window} 天，無法算20日均線",
+        }
+
+    ma_short = close.rolling(short_window).mean()
+    ma_long = close.rolling(long_window).mean()
+
+    last_close = float(close.iloc[-1])
+    last_ma_short = float(ma_short.iloc[-1])
+    last_ma_long = float(ma_long.iloc[-1])
+
+    if last_ma_short > last_ma_long:
+        alignment = "多頭排列"
+    elif last_ma_short < last_ma_long:
+        alignment = "空頭排列"
+    else:
+        alignment = "糾結"
+
+    return {
+        "收盤價": round(last_close, 2),
+        "5日均線": round(last_ma_short, 2),
+        "20日均線": round(last_ma_long, 2),
+        "均線排列": alignment,
+        "站上5日線": bool(last_close > last_ma_short),
+    }
+
+
+def apply_directional_filter(label: str, ma_result: dict) -> dict:
+    """
+    只對「強烈偏多延續」「強烈偏空延續」做均線二次確認：
+      - 強烈偏多延續 + 多頭排列(5>20) + 站上5日線 → 推薦買進
+      - 強烈偏空延續 + 空頭排列(5<20) + 跌破5日線 → 留意／警示
+    分數方向跟均線方向對不上時，維持原始標籤，但不列入推薦／留意名單，
+    並在註記裡誠實寫出「為什麼沒過濾網」，而不是靜默忽略。
+    """
+    if ma_result.get("均線排列") == "資料不足":
+        return {"均線濾網": "", "均線濾網註記": ma_result.get("均線排列註記", "資料不足")}
+
+    alignment = ma_result.get("均線排列")
+    above_short = ma_result.get("站上5日線")
+
+    if label == "強烈偏多延續":
+        passed = (alignment == "多頭排列") and above_short
+        if passed:
+            return {"均線濾網": "推薦買進",
+                    "均線濾網註記": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}
+        return {"均線濾網": "訊號未過濾(偏多)",
+                "均線濾網註記": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}
+
+    if label == "強烈偏空延續":
+        passed = (alignment == "空頭排列") and (not above_short)
+        if passed:
+            return {"均線濾網": "留意/警示",
+                    "均線濾網註記": "分數強烈偏空，均線也是空頭排列且跌破5日線，兩者一致"}
+        return {"均線濾網": "訊號未過濾(偏空)",
+                "均線濾網註記": "分數強烈偏空，但均線還不是空頭排列或尚未跌破5日線，暫不列入留意名單"}
+
+    return {"均線濾網": "", "均線濾網註記": "非強烈訊號，不套用均線濾網"}
 
 
 if __name__ == "__main__":
