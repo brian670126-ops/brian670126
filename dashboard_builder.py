@@ -68,6 +68,18 @@ def build_dashboard_rows(report_rows: list[dict]) -> list[dict]:
         ticker = r["目標股"]
         tnum = str(ticker).split(".")[0]
         top = r.get("主要貢獻1", "")
+
+        def _clean_str(v):
+            return v if isinstance(v, str) and v else ""
+
+        def _clean_num(v):
+            try:
+                if v is None or (isinstance(v, float) and pd.isna(v)):
+                    return None
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+
         rows.append({
             "ticker": ticker,
             "name": name_map.get(tnum, ""),
@@ -76,6 +88,12 @@ def build_dashboard_rows(report_rows: list[dict]) -> list[dict]:
             "label": r["趨勢延續標籤"],
             "confidence": r["信心"],
             "top": top if isinstance(top, str) else "",
+            "close": _clean_num(r.get("收盤價")),
+            "ma5": _clean_num(r.get("5日均線")),
+            "ma20": _clean_num(r.get("20日均線")),
+            "maAlignment": _clean_str(r.get("均線排列")),
+            "maFilter": _clean_str(r.get("均線濾網")),
+            "maNote": _clean_str(r.get("均線濾網註記")),
         })
     return rows
 
@@ -586,9 +604,56 @@ footer a { color: inherit; }
   margin-left: 3px;
 }
 
+/* ---- 均線二次確認名單 ---- */
+.picks-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.picks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+.picks-col-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.picks-col-title.up { color: var(--up-mid); }
+.picks-col-title.down { color: var(--down-mid); }
+.pick-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.pick-item.up { background: var(--up-strong-bg); }
+.pick-item.down { background: var(--down-strong-bg); }
+.pick-item .pick-name { font-weight: 600; }
+.pick-item .pick-code { color: var(--ink-faint); font-size: 11.5px; margin-left: 4px; }
+.pick-item .pick-ma { color: var(--ink-faint); font-size: 11px; display: block; margin-top: 1px; }
+.pick-item .pick-score {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pick-item.up .pick-score { color: var(--up-strong); }
+.pick-item.down .pick-score { color: var(--down-strong); }
+.picks-empty { color: var(--ink-faint); font-size: 12.5px; padding: 8px 2px; }
+
 @media (max-width: 640px) {
   .stats { grid-template-columns: 1fr; }
   .wrap { padding: 20px 14px 48px; }
+  .picks-grid { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -628,6 +693,21 @@ footer a { color: inherit; }
 
   <div class="narrative" id="narrative"></div>
 
+  <div class="picks-wrap">
+    <div class="section-heading">均線二次確認 — 今日名單</div>
+    <div class="section-sub">只套用在最極端的「強烈偏多／強烈偏空」訊號：用目標股自己的 5日／20日均線做事後確認，分數再強，均線沒轉向就不列入下面名單（詳見頁尾說明）</div>
+    <div class="picks-grid">
+      <div>
+        <div class="picks-col-title up">推薦買進（<span id="picks-up-count">0</span>）</div>
+        <div id="picks-up-list"></div>
+      </div>
+      <div>
+        <div class="picks-col-title down">留意／警示（<span id="picks-down-count">0</span>）</div>
+        <div id="picks-down-list"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="industry-chart-wrap">
     <div class="section-heading">產業別平均趨勢分數</div>
     <div class="section-sub">同一個「編號」分類下所有目標股的分數平均，由高到低排序；n 是該產業納入平均的檔數</div>
@@ -651,6 +731,7 @@ footer a { color: inherit; }
           <th data-key="ticker">股票<button data-key="ticker"><span>股票／產業</span><span class="arrow">▾</span></button></th>
           <th data-key="score100" style="width:184px"><button data-key="score100"><span>趨勢延續分數</span><span class="arrow">▾</span></button></th>
           <th data-key="label"><button data-key="label"><span>標籤</span><span class="arrow">▾</span></button></th>
+          <th>均線確認</th>
           <th data-key="confidence">信心說明</th>
           <th data-key="top">主要貢獻</th>
         </tr>
@@ -671,7 +752,7 @@ footer a { color: inherit; }
   </div>
 
   <footer>
-    分數為「趨勢延續分數」（-100~+100），依產業關聯股當日同向表現加權計算，僅供輔助參考，非投資建議；樣本數不足 30 天的關聯股不計入權重。信心說明包含兩件事：納入的關聯股檔數，以及這些關聯股各自的天數樣本是否充足。
+    分數為「趨勢延續分數」（-100~+100），依產業關聯股當日同向表現加權計算，僅供輔助參考，非投資建議；樣本數不足 30 天的關聯股不計入權重。信心說明包含兩件事：納入的關聯股檔數，以及這些關聯股各自的天數樣本是否充足。「均線確認」只對強烈偏多／強烈偏空這兩端做二次確認：用目標股自己的收盤價，看 5日均線是否高於（或低於）20日均線、以及收盤是否站上（或跌破）5日均線，兩者都同方向才會列入「推薦買進」或「留意／警示」名單；只有分數極端、但均線還沒跟上的標的，會顯示「訊號未過濾」，代表暫不建議只憑這個分數行動。
   </footer>
 </div>
 
@@ -778,8 +859,47 @@ function init() {
 
   renderStats();
   renderNarrative();
+  renderPicks();
   renderIndustryChart();
   render();
+}
+
+// ---- 均線二次確認名單（依 DATA 動態算，maFilter 是後端已經合併判斷過的結果）----
+function renderPicks() {
+  const ups = DATA.filter(d => d.maFilter === '推薦買進');
+  const downs = DATA.filter(d => d.maFilter === '留意/警示');
+  document.getElementById('picks-up-count').textContent = ups.length;
+  document.getElementById('picks-down-count').textContent = downs.length;
+
+  const fmtMa = d => (d.ma5 != null && d.ma20 != null)
+    ? `收盤 ${d.close != null ? d.close.toFixed(1) : '—'}・5日均線 ${d.ma5.toFixed(1)}・20日均線 ${d.ma20.toFixed(1)}`
+    : '';
+
+  const renderList = (elId, list, side) => {
+    const el = document.getElementById(elId);
+    if (!list.length) {
+      el.innerHTML = `<div class="picks-empty">今天沒有均線也同方向確認的標的</div>`;
+      return;
+    }
+    const sorted = list.slice().sort((a, b) => side === 'up' ? b.score100 - a.score100 : a.score100 - b.score100);
+    el.innerHTML = sorted.map(d => `
+      <div class="pick-item ${side}">
+        <span>
+          <span class="pick-name">${escapeHtml(d.name)}</span><span class="pick-code mono">${d.ticker.replace('.TW', '')}</span>
+          <span class="pick-ma mono">${fmtMa(d)}</span>
+        </span>
+        <span class="pick-score">${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}</span>
+      </div>
+    `).join('');
+  };
+  renderList('picks-up-list', ups, 'up');
+  renderList('picks-down-list', downs, 'down');
+}
+
+function maBadgeStyle(filterVal) {
+  if (filterVal === '推薦買進') return `--badgebg:var(--up-strong-bg);--badgefg:var(--up-strong)`;
+  if (filterVal === '留意/警示') return `--badgebg:var(--down-strong-bg);--badgefg:var(--down-strong)`;
+  return `--badgebg:var(--flat-bg);--badgefg:var(--ink-faint)`;
 }
 
 // ---- 產業別平均分數（依 DATA 動態算，每天資料一換這裡就自動跟著換）----
@@ -917,7 +1037,7 @@ function render() {
   if (!sorted.length) {
     const tr = document.createElement('tr');
     tr.className = 'empty-row';
-    tr.innerHTML = `<td colspan="6">沒有符合條件的股票</td>`;
+    tr.innerHTML = `<td colspan="7">沒有符合條件的股票</td>`;
     tbody.appendChild(tr);
     return;
   }
@@ -949,6 +1069,9 @@ function render() {
         </div>
       </td>
       <td><span class="badge" style="--badgebg:var(${meta.bgVar});--badgefg:var(${meta.fgVar})">${d.label}</span></td>
+      <td>${d.maFilter
+        ? `<span class="badge" title="${escapeHtml(d.maNote || '')}" style="${maBadgeStyle(d.maFilter)}">${d.maFilter}</span>`
+        : '<span style="color:var(--ink-faint)">—</span>'}</td>
       <td class="conf-cell">
         <div class="conf-main">${escapeHtml(conf.main)}</div>
         <div class="conf-sub">${escapeHtml(conf.sub)}</div>

@@ -25,7 +25,8 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 from data_fetcher import fetch_yfinance_ohlcv          # noqa: E402
 from correlation_engine import (                        # noqa: E402
-    load_returns, build_relation_scorecard, trend_continuation_score,
+    load_returns, load_close_prices, ma_alignment_check, apply_directional_filter,
+    build_relation_scorecard, trend_continuation_score,
 )
 from dashboard_builder import build_and_save_dashboard  # noqa: E402
 
@@ -103,6 +104,16 @@ def run_for_target(target_ticker: str, target_number: int, relation_map: pd.Data
     latest_returns = {t: s.iloc[-1] for t, s in price_data.items() if t != target_ticker and len(s)}
     score = trend_continuation_score(scorecard, latest_returns)
 
+    # 均線二次確認濾網（只在「強烈偏多/偏空延續」時才有意義，見 correlation_engine.py 說明）：
+    # 用目標股「自己」剛更新過的收盤價序列算 5日/20日均線，跟趨勢延續分數的方向合併判斷。
+    try:
+        close_prices = load_close_prices(str(DATA_DIR / f"{target_ticker}.csv"))
+        ma_result = ma_alignment_check(close_prices)
+    except Exception as e:  # noqa: BLE001
+        log(f"⚠️ {target_ticker} 均線濾網計算失敗，跳過：{e}")
+        ma_result = {"均線排列": "資料不足", "均線排列註記": f"計算失敗：{e}"}
+    filter_result = apply_directional_filter(score["label"], ma_result)
+
     return {
         "target": target_ticker,
         "date": today_taiwan(),
@@ -112,6 +123,8 @@ def run_for_target(target_ticker: str, target_number: int, relation_map: pd.Data
         "confidence": score["confidence"],
         "top_contributors": score["contributing"][:5],
         "scorecard": scorecard,
+        "ma_result": ma_result,
+        "filter_result": filter_result,
     }
 
 
@@ -144,6 +157,8 @@ def main():
             REPORT_DIR / f"scorecard_{target_ticker.replace('.', '_')}_{today}.csv",
             index=False, encoding="utf-8-sig",
         )
+        ma_result = result.get("ma_result", {})
+        filter_result = result.get("filter_result", {})
         report_rows.append({
             "日期": today, "目標股": target_ticker,
             "趨勢延續分數": result["direction_score"],
@@ -151,8 +166,15 @@ def main():
             "趨勢延續標籤": result["label"],
             "信心": result["confidence"],
             "主要貢獻1": result["top_contributors"][0]["公司名稱"] if result["top_contributors"] else "",
+            "收盤價": ma_result.get("收盤價"),
+            "5日均線": ma_result.get("5日均線"),
+            "20日均線": ma_result.get("20日均線"),
+            "均線排列": ma_result.get("均線排列"),
+            "均線濾網": filter_result.get("均線濾網", ""),
+            "均線濾網註記": filter_result.get("均線濾網註記", ""),
         })
-        log(f"完成：{target_ticker} 趨勢延續分數={result['score_100']}（{result['label']}，{result['confidence']}）")
+        filter_note = f"｜均線濾網：{filter_result['均線濾網']}" if filter_result.get("均線濾網") else ""
+        log(f"完成：{target_ticker} 趨勢延續分數={result['score_100']}（{result['label']}，{result['confidence']}）{filter_note}")
 
     if report_rows:
         summary = pd.DataFrame(report_rows)
