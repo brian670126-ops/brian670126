@@ -1,26 +1,26 @@
 {
-  "fetched_at": "2026-09-13T10:53:58.893916",
+  "fetched_at": "2026-09-13T22:06:11.598476",
   "results": {
     "ES": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "NQ": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "YM": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "RTY": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
@@ -56,25 +56,25 @@
       "last_weekly": "2026-09-07 00:00:00"
     },
     "GC": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "SI": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "CL": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     },
     "NG": {
-      "daily": 62,
+      "daily": 61,
       "weekly": 57,
       "last_daily": "2026-09-11 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
@@ -94,7 +94,7 @@
     "USDTWD": {
       "daily": 66,
       "weekly": 58,
-      "last_daily": "2026-09-12 00:00:00",
+      "last_daily": "2026-09-13 00:00:00",
       "last_weekly": "2026-09-07 00:00:00"
     }
   }
