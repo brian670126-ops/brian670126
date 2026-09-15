@@ -3,13 +3,18 @@ tx_fetcher.py
 台指期（TX）資料自動抓取模組
 來源：台灣期貨交易所（taifex.com.tw）
 功能：
-  1. 抓取每日 TX 近月合約 OHLC
+  1. 抓取每日 TX 近月合約 OHLC（日盤＋夜盤合併）
+     - Open  = 日盤開盤價
+     - High  = max(日盤最高, 夜盤最高)
+     - Low   = min(日盤最低, 夜盤最低)
+     - Close = 夜盤收盤價（若夜盤無資料則用日盤收盤）
   2. 存成日線 CSV
   3. 每週彙整成週線 CSV
 用法：
   python tx_fetcher.py              # 抓今日資料
-  python tx_fetcher.py --date 2026-09-15  # 抓指定日期
+  python tx_fetcher.py --date 2026-09-15
   python tx_fetcher.py --weekly     # 強制重新彙整週線
+  python tx_fetcher.py --backfill 90
 """
 
 import requests
@@ -18,140 +23,185 @@ from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
 import argparse
 import os
-import re
 import time
 
-# ── 路徑設定（配合你的 repo 結構）──────────────────────────────────────────
-BASE_DIR    = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR    = os.path.join(BASE_DIR, "three_gate", "data", "auto")
-DAILY_CSV   = os.path.join(DATA_DIR, "TX_daily.csv")
-WEEKLY_CSV  = os.path.join(DATA_DIR, "TX_weekly.csv")
+# ── 路徑設定 ───────────────────────────────────────────────────────────────
+BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR  = os.path.join(BASE_DIR, "three_gate", "data", "auto")
+DAILY_CSV = os.path.join(DATA_DIR, "TX_daily.csv")
+WEEKLY_CSV= os.path.join(DATA_DIR, "TX_weekly.csv")
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # ── 台期所 URL ─────────────────────────────────────────────────────────────
 TAIFEX_URL = "https://www.taifex.com.tw/cht/3/futDailyMarketReport"
-
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (compatible; DataBot/1.0)",
-    "Referer": "https://www.taifex.com.tw/"
+    "Referer":    "https://www.taifex.com.tw/"
 }
+
+# marketCode: 0=日盤一般交易時段, 1=夜盤盤後交易時段
+SESSION_DAY   = "0"
+SESSION_NIGHT = "1"
 
 
 def is_trading_day(date: datetime) -> bool:
-    """簡單判斷是否為交易日（排除週六日）"""
-    return date.weekday() < 5
+    return date.weekday() < 5  # 排除週六日
+
+
+def fetch_session(date: datetime, market_code: str) -> dict | None:
+    """
+    抓取指定日期、指定時段（日盤/夜盤）的 TX 近月合約 OHLC。
+    回傳 dict: {open, high, low, close, volume} 或 None
+    """
+    date_str = date.strftime("%Y/%m/%d")
+    params = {
+        "queryType":   "1",
+        "marketCode":  market_code,
+        "dateaddcnt":  "0",
+        "commodity_id":"TX",
+        "queryDate":   date_str
+    }
+    try:
+        resp = requests.get(TAIFEX_URL, params=params, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"[ERROR] 抓取失敗 (date={date_str} session={market_code}): {e}")
+        return None
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    best = None  # 取成交量最大的近月合約
+
+    for table in soup.find_all("table"):
+        for row in table.find_all("tr"):
+            cells = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
+            if len(cells) < 8 or cells[0] != "TX":
+                continue
+            try:
+                o = float(cells[2].replace(",", ""))
+                h = float(cells[3].replace(",", ""))
+                l = float(cells[4].replace(",", ""))
+                c = float(cells[5].replace(",", ""))
+                vol_str = cells[7].replace(",", "")
+                vol = int(vol_str) if vol_str.isdigit() else 0
+                if o > 0 and c > 0:
+                    if best is None or vol > best["volume"]:
+                        best = {"open": o, "high": h, "low": l,
+                                "close": c, "volume": vol}
+            except (ValueError, IndexError):
+                continue
+
+    return best
 
 
 def fetch_tx_daily(date: datetime) -> dict | None:
     """
-    從台期所抓指定日期的 TX 近月合約 OHLC。
-    回傳 dict: {date, open, high, low, close, volume} 或 None（非交易日/無資料）
+    合併日盤＋夜盤，回傳當日完整 OHLC：
+      Open  = 日盤 Open
+      High  = max(日盤 H, 夜盤 H)
+      Low   = min(日盤 L, 夜盤 L)
+      Close = 夜盤 Close（若無夜盤則用日盤 Close）
     """
     if not is_trading_day(date):
         print(f"[SKIP] {date.strftime('%Y-%m-%d')} 非交易日")
         return None
 
-    date_str = date.strftime("%Y/%m/%d")
-    params = {"queryType": "1", "marketCode": "0", "dateaddcnt": "0",
-              "commodity_id": "TX", "queryDate": date_str}
+    day   = fetch_session(date, SESSION_DAY)
+    night = fetch_session(date, SESSION_NIGHT)
 
-    try:
-        resp = requests.get(TAIFEX_URL, params=params, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-    except Exception as e:
-        print(f"[ERROR] 抓取失敗: {e}")
+    if day is None and night is None:
+        print(f"[MISS] {date.strftime('%Y-%m-%d')} 無有效資料（可能休市）")
         return None
 
-    soup = BeautifulSoup(resp.text, "html.parser")
-    tables = soup.find_all("table")
+    if day is None:
+        # 只有夜盤（不常見，但處理）
+        result = {
+            "date":   date.strftime("%Y-%m-%d"),
+            "open":   night["open"],
+            "high":   night["high"],
+            "low":    night["low"],
+            "close":  night["close"],
+            "volume": night["volume"]
+        }
+    elif night is None:
+        # 只有日盤
+        result = {
+            "date":   date.strftime("%Y-%m-%d"),
+            "open":   day["open"],
+            "high":   day["high"],
+            "low":    day["low"],
+            "close":  day["close"],
+            "volume": day["volume"]
+        }
+    else:
+        # 日盤＋夜盤合併
+        result = {
+            "date":   date.strftime("%Y-%m-%d"),
+            "open":   day["open"],
+            "high":   max(day["high"],  night["high"]),
+            "low":    min(day["low"],   night["low"]),
+            "close":  night["close"],
+            "volume": day["volume"] + night["volume"]
+        }
 
-    for table in tables:
-        rows = table.find_all("tr")
-        for row in rows:
-            cells = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
-            # 找含有 TX 的行，且有開高低收資料
-            if len(cells) < 8:
-                continue
-            if cells[0] != "TX":
-                continue
-            # 找近月合約（月份最近的那筆，成交量最大）
-            try:
-                open_p  = float(cells[2].replace(",", ""))
-                high_p  = float(cells[3].replace(",", ""))
-                low_p   = float(cells[4].replace(",", ""))
-                close_p = float(cells[5].replace(",", ""))
-                volume  = int(cells[7].replace(",", "")) if cells[7].replace(",", "").isdigit() else 0
-
-                if open_p > 0 and close_p > 0:
-                    print(f"[OK] {date.strftime('%Y-%m-%d')} TX O={open_p} H={high_p} L={low_p} C={close_p} Vol={volume}")
-                    return {
-                        "date":   date.strftime("%Y-%m-%d"),
-                        "open":   open_p,
-                        "high":   high_p,
-                        "low":    low_p,
-                        "close":  close_p,
-                        "volume": volume
-                    }
-            except (ValueError, IndexError):
-                continue
-
-    print(f"[MISS] {date_str} 無有效 TX 資料（可能休市）")
-    return None
+    session_tag = "日+夜" if (day and night) else ("日" if day else "夜")
+    print(f"[OK] {result['date']} TX({session_tag}) "
+          f"O={result['open']} H={result['high']} "
+          f"L={result['low']}  C={result['close']} Vol={result['volume']}")
+    return result
 
 
-def update_daily_csv(new_row: dict) -> pd.DataFrame:
-    """把新資料加到日線 CSV（避免重複）"""
+def load_daily() -> pd.DataFrame:
     if os.path.exists(DAILY_CSV):
         df = pd.read_csv(DAILY_CSV, parse_dates=["date"])
     else:
-        df = pd.DataFrame(columns=["date", "open", "high", "low", "close", "volume"])
-
-    new_df = pd.DataFrame([new_row])
-    new_df["date"] = pd.to_datetime(new_df["date"])
-
-    # 去重：移除已存在的同日資料再加入
-    df = df[df["date"] != new_df["date"].iloc[0]]
-    df = pd.concat([df, new_df], ignore_index=True)
-    df = df.sort_values("date").reset_index(drop=True)
-
-    df.to_csv(DAILY_CSV, index=False, date_format="%Y-%m-%d")
-    print(f"[SAVED] 日線 CSV 更新：{DAILY_CSV}（共 {len(df)} 筆）")
+        df = pd.DataFrame(columns=["date","open","high","low","close","volume"])
     return df
 
 
-def build_weekly_csv(df_daily: pd.DataFrame) -> pd.DataFrame:
-    """
-    從日線資料彙整週線（週一到週五，以週五為代表日）。
-    只產出完整週（有結束的週，即週五已過）。
-    """
+def save_daily(df: pd.DataFrame):
+    df = df.sort_values("date").reset_index(drop=True)
+    df.to_csv(DAILY_CSV, index=False, date_format="%Y-%m-%d")
+    print(f"[SAVED] 日線 CSV：{DAILY_CSV}（共 {len(df)} 筆）")
+
+
+def upsert_row(row: dict) -> pd.DataFrame:
+    df = load_daily()
+    new_df = pd.DataFrame([row])
+    new_df["date"] = pd.to_datetime(new_df["date"])
+    df = df[df["date"] != new_df["date"].iloc[0]]
+    df = pd.concat([df, new_df], ignore_index=True)
+    save_daily(df)
+    return df
+
+
+def upsert_rows(rows: list) -> pd.DataFrame:
+    df = load_daily()
+    new_df = pd.DataFrame(rows)
+    new_df["date"] = pd.to_datetime(new_df["date"])
+    df = df[~df["date"].isin(new_df["date"])]
+    df = pd.concat([df, new_df], ignore_index=True)
+    save_daily(df)
+    return df
+
+
+def build_weekly(df_daily: pd.DataFrame) -> pd.DataFrame:
     df = df_daily.copy()
     df["date"] = pd.to_datetime(df["date"])
-    df = df.sort_values("date")
-
-    # 以週為單位 resample（週五為週末）
-    df.set_index("date", inplace=True)
-    weekly = df.resample("W-FRI").agg({
-        "open":   "first",
-        "high":   "max",
-        "low":    "min",
-        "close":  "last",
-        "volume": "sum"
-    }).dropna(subset=["open", "close"])
-
-    # 只保留有資料的週
-    weekly = weekly[weekly["open"] > 0]
-    weekly = weekly.reset_index()
+    df = df.sort_values("date").set_index("date")
+    weekly = df.resample("W-FRI").agg(
+        {"open": "first", "high": "max", "low": "min",
+         "close": "last", "volume": "sum"}
+    ).dropna(subset=["open", "close"])
+    weekly = weekly[weekly["open"] > 0].reset_index()
     weekly.rename(columns={"date": "week_end"}, inplace=True)
     weekly["week_end"] = weekly["week_end"].dt.strftime("%Y-%m-%d")
-
     weekly.to_csv(WEEKLY_CSV, index=False)
-    print(f"[SAVED] 週線 CSV 更新：{WEEKLY_CSV}（共 {len(weekly)} 筆）")
+    print(f"[SAVED] 週線 CSV：{WEEKLY_CSV}（共 {len(weekly)} 筆）")
     return weekly
 
 
-def backfill(days: int = 30):
-    """補抓過去 N 天的資料"""
-    print(f"[BACKFILL] 補抓過去 {days} 天資料...")
+def backfill(days: int = 90):
+    print(f"[BACKFILL] 補抓過去 {days} 天資料（日盤＋夜盤合併）...")
     today = datetime.today()
     rows = []
     for i in range(days, -1, -1):
@@ -159,36 +209,20 @@ def backfill(days: int = 30):
         row = fetch_tx_daily(d)
         if row:
             rows.append(row)
-        time.sleep(0.5)  # 避免打太快
+        time.sleep(0.8)  # 避免打太快被擋
 
     if rows:
-        df = update_daily_csv_bulk(rows)
-        build_weekly_csv(df)
-
-
-def update_daily_csv_bulk(rows: list) -> pd.DataFrame:
-    """批量寫入多筆資料"""
-    if os.path.exists(DAILY_CSV):
-        df = pd.read_csv(DAILY_CSV, parse_dates=["date"])
-    else:
-        df = pd.DataFrame(columns=["date", "open", "high", "low", "close", "volume"])
-
-    new_df = pd.DataFrame(rows)
-    new_df["date"] = pd.to_datetime(new_df["date"])
-    df = df[~df["date"].isin(new_df["date"])]
-    df = pd.concat([df, new_df], ignore_index=True)
-    df = df.sort_values("date").reset_index(drop=True)
-    df.to_csv(DAILY_CSV, index=False, date_format="%Y-%m-%d")
-    print(f"[SAVED] 日線 CSV 更新：{DAILY_CSV}（共 {len(df)} 筆）")
-    return df
+        df = upsert_rows(rows)
+        build_weekly(df)
+    print(f"[BACKFILL] 完成，共抓到 {len(rows)} 筆")
 
 
 # ── 主程式 ──────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="台指期 TX 資料抓取")
-    parser.add_argument("--date",    type=str, help="指定日期 YYYY-MM-DD（預設今日）")
-    parser.add_argument("--weekly",  action="store_true", help="強制重新彙整週線")
-    parser.add_argument("--backfill",type=int, default=0, help="補抓過去 N 天資料")
+    parser = argparse.ArgumentParser(description="台指期 TX 資料抓取（日盤＋夜盤合併）")
+    parser.add_argument("--date",     type=str, help="指定日期 YYYY-MM-DD（預設今日）")
+    parser.add_argument("--weekly",   action="store_true", help="強制重新彙整週線")
+    parser.add_argument("--backfill", type=int, default=0, help="補抓過去 N 天資料")
     args = parser.parse_args()
 
     if args.backfill > 0:
@@ -198,14 +232,14 @@ if __name__ == "__main__":
         row = fetch_tx_daily(target)
 
         if row:
-            df_daily = update_daily_csv(row)
+            df_daily = upsert_row(row)
         elif os.path.exists(DAILY_CSV):
-            df_daily = pd.read_csv(DAILY_CSV, parse_dates=["date"])
+            df_daily = load_daily()
         else:
             print("[WARN] 無日線資料，結束")
             exit(0)
 
-        # 每週五自動彙整週線，或強制重建
-        if args.weekly or target.weekday() == 4:  # 4 = 週五
-            build_weekly_csv(df_daily)
+        # 週五自動彙整，或強制重建
+        if args.weekly or target.weekday() == 4:
+            build_weekly(df_daily)
             print("[INFO] 週線已更新")
