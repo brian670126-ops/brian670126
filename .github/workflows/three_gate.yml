@@ -39,7 +39,7 @@ jobs:
       - name: 抓取TX台指期資料
         run: |
           pip install requests beautifulsoup4 -q
-          python tx_fetcher.py --backfill 90
+          python tx_fetcher.py 
           if [ "$(date +%u)" = "5" ]; then 
             python tx_fetcher.py --weekly
             echo "週五：已彙整本週週線"
