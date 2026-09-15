@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  分析:
+  analyze:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
