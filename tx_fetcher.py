@@ -1,8 +1,13 @@
 """
-tx_fetcher.py  v3
+tx_fetcher.py  v4
 台指期（TX）資料自動抓取模組
 來源：台灣期貨交易所（taifex.com.tw）
 合併日盤＋夜盤：Open=日盤O, High=max(日H,夜H), Low=min(日L,夜L), Close=夜盤C
+
+台期所欄位順序（已確認）：
+[0]=契約 [1]=到期月份 [2]=開盤價 [3]=最高價 [4]=最低價 [5]=最後成交價
+[6]=漲跌值 [7]=漲跌% [8]=*成交量 [9]=結算價 [10]=*未沖銷契約量
+[11]=最後最佳買價 [12]=最後最佳賣價 [13]=歷史最高 [14]=歷史最低
 """
 
 import requests
@@ -26,47 +31,34 @@ HEADERS = {
     "Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-PRICE_MIN = 5000    # 台指期合理最低價
-PRICE_MAX = 100000  # 台指期合理最高價
+PRICE_MIN = 5000
+PRICE_MAX = 100000
 
 
-def is_price(v):
-    """判斷是否為合理的台指期價格"""
+def to_float(s):
     try:
-        f = float(str(v).replace(",", ""))
-        return PRICE_MIN < f < PRICE_MAX
+        return float(str(s).replace(",", "").strip())
     except:
-        return False
-
-
-def parse_ohlc_from_cells(cells):
-    """
-    從一行 cells 中找出 OHLC：
-    策略：找出所有合理價格的位置，第一個=Open, max=High, min=Low, 最後一個=Close
-    """
-    prices = []
-    for i, c in enumerate(cells):
-        c = str(c).replace(",", "").strip()
-        try:
-            f = float(c)
-            if PRICE_MIN < f < PRICE_MAX:
-                prices.append((i, f))
-        except:
-            pass
-
-    if len(prices) < 4:
         return None
 
-    vals = [p[1] for p in prices]
-    return {
-        "open":  vals[0],
-        "high":  max(vals),
-        "low":   min(vals),
-        "close": vals[-1],
-    }
+
+def to_int(s):
+    try:
+        return int(str(s).replace(",", "").strip())
+    except:
+        return 0
+
+
+def is_trading_day(date: datetime) -> bool:
+    return date.weekday() < 5
 
 
 def fetch_session(date: datetime, market_code: str) -> dict | None:
+    """
+    抓取指定日期、時段的 TX 近月合約 OHLC。
+    欄位固定：[2]=O [3]=H [4]=L [5]=C [8]=Vol
+    取成交量最大的那筆（近月合約）。
+    """
     date_str = date.strftime("%Y/%m/%d")
     params = {
         "queryType":    "1",
@@ -88,37 +80,32 @@ def fetch_session(date: datetime, market_code: str) -> dict | None:
     for table in soup.find_all("table"):
         for row in table.find_all("tr"):
             cells = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
-            if len(cells) < 6:
+
+            # 第一欄必須是 TX
+            if len(cells) < 9 or cells[0] != "TX":
                 continue
 
-            # 找 TX 開頭的行（近月合約）
-            if cells[0] not in ("TX", "臺股期貨"):
+            o   = to_float(cells[2])
+            h   = to_float(cells[3])
+            l   = to_float(cells[4])
+            c   = to_float(cells[5])
+            vol = to_int(cells[8])
+
+            # 驗證價格合理
+            if not all([o, h, l, c]):
+                continue
+            if not (PRICE_MIN < o < PRICE_MAX and
+                    PRICE_MIN < h < PRICE_MAX and
+                    PRICE_MIN < l < PRICE_MAX and
+                    PRICE_MIN < c < PRICE_MAX):
+                continue
+            if h < l or h < o or h < c:
                 continue
 
-            ohlc = parse_ohlc_from_cells(cells)
-            if ohlc is None:
-                continue
-
-            # 成交量：找最後幾欄中最大的整數
-            vol = 0
-            for c in reversed(cells):
-                c = str(c).replace(",", "").strip()
-                try:
-                    v = int(float(c))
-                    if v > 0 and v < 10_000_000:
-                        vol = v
-                        break
-                except:
-                    pass
-
-            if best is None or vol > best.get("volume", 0):
-                best = {**ohlc, "volume": vol}
+            if best is None or vol > best["volume"]:
+                best = {"open": o, "high": h, "low": l, "close": c, "volume": vol}
 
     return best
-
-
-def is_trading_day(date: datetime) -> bool:
-    return date.weekday() < 5
 
 
 def fetch_tx_daily(date: datetime) -> dict | None:
@@ -126,23 +113,17 @@ def fetch_tx_daily(date: datetime) -> dict | None:
         print(f"[SKIP] {date.strftime('%Y-%m-%d')} 非交易日")
         return None
 
-    day   = fetch_session(date, "0")
-    night = fetch_session(date, "1")
+    day   = fetch_session(date, "0")   # 日盤
+    night = fetch_session(date, "1")   # 夜盤
 
     if day is None and night is None:
-        print(f"[MISS] {date.strftime('%Y-%m-%d')} 無有效資料（可能休市）")
+        print(f"[MISS] {date.strftime('%Y-%m-%d')} 無資料（可能休市）")
         return None
 
     if day is None:
-        result = {"open": night["open"], "high": night["high"],
-                  "low": night["low"],   "close": night["close"],
-                  "volume": night["volume"]}
-        tag = "夜"
+        result = {**night}; tag = "夜"
     elif night is None:
-        result = {"open": day["open"], "high": day["high"],
-                  "low": day["low"],   "close": day["close"],
-                  "volume": day["volume"]}
-        tag = "日"
+        result = {**day};   tag = "日"
     else:
         result = {
             "open":   day["open"],
@@ -179,6 +160,8 @@ def upsert(rows) -> pd.DataFrame:
     df = load_daily()
     new = pd.DataFrame(rows)
     new["date"] = pd.to_datetime(new["date"])
+    # 過濾掉舊版錯誤資料（high 重複出現的異常值）
+    df = df[df["close"] > PRICE_MIN]
     df = df[~df["date"].isin(new["date"])]
     df = pd.concat([df, new], ignore_index=True)
     save_daily(df)
@@ -188,10 +171,8 @@ def upsert(rows) -> pd.DataFrame:
 def build_weekly(df_daily: pd.DataFrame):
     df = df_daily.copy()
     df["date"] = pd.to_datetime(df["date"])
+    df = df[df["close"] > PRICE_MIN]   # 過濾舊版錯誤資料
     df = df.sort_values("date").set_index("date")
-
-    # 只保留合理價格的日線（過濾掉舊版錯誤資料）
-    df = df[df["close"] > PRICE_MIN]
 
     weekly = df.resample("W-FRI").agg(
         {"open": "first", "high": "max", "low": "min",
