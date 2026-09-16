@@ -1,71 +1,231 @@
-name: 三關價系統 - 每日全球商品分析
+"""
+t5f_fetcher.py  v1
+台灣50期貨（元大台灣50ETF期貨，TAIFEX 代碼 NYF）資料自動抓取模組
+來源：台灣期貨交易所（taifex.com.tw）
+合併日盤＋夜盤：Open=日盤O, High=max(日H,夜H), Low=min(日L,夜L), Close=夜盤C
 
-# 每天台灣時間 06:00 執行（UTC 22:00，週日至週四 = 頭部週一到週五交易日）
-# 06:00 = 台指期夜盤 05:00 收盤後 1 小時緩衝
-on:
-  schedule:
-    - cron: '0 22 * * 0-4'
-  # 手動觸發也可以
-  workflow_dispatch:
+架構完全比照 tx_fetcher.py，只是換成 NYF（元大台灣50ETF期貨）這個商品，
+且價格區間改成 ETF 期貨的價位量級（十幾～數百元），不是台指期的量級。
 
-jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+台期所欄位順序（已確認，與 tx_fetcher.py 相同）：
+[0]=契約 [1]=到期月份 [2]=開盤價 [3]=最高價 [4]=最低價 [5]=最後成交價
+[6]=漲跌值 [7]=漲跌% [8]=*成交量 [9]=結算價 [10]=*未沖銷契約量
+[11]=最後最佳買價 [12]=最後最佳賣價 [13]=歷史最高 [14]=歷史最低
+"""
 
-    steps:
-      - name: 檢出程式碼
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+import requests
+import pandas as pd
+from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
+import argparse
+import os
+import time
 
-      - name: 設定Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-          cache-dependency-path: 'three_gate/requirements.txt'
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR   = os.path.join(BASE_DIR, "three_gate", "data", "auto")
+DAILY_CSV  = os.path.join(DATA_DIR, "T5F_daily.csv")
+WEEKLY_CSV = os.path.join(DATA_DIR, "T5F_weekly.csv")
+os.makedirs(DATA_DIR, exist_ok=True)
 
-      - name: 安裝依賴
-        run: |
-          cd three_gate
-          pip install --upgrade pip
-          pip install -r requirements.txt
+TAIFEX_URL = "https://www.taifex.com.tw/cht/3/futDailyMarketReport"
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+    "Referer":    "https://www.taifex.com.tw/",
+    "Accept":     "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+}
 
-      - name: 抓取 yfinance 資料
-        working-directory: three_gate
-        run: python src/fetch_yfinance.py
+COMMODITY_ID = "NYF"   # 元大台灣50ETF期貨（TAIFEX 官方代碼）
 
-      - name: 抓取TX台指期資料
-        run: |
-          pip install requests beautifulsoup4 -q
-          python tx_fetcher.py --backfill 2
-          if [ "$(date +%u)" = "5" ]; then 
-            python tx_fetcher.py --weekly
-            echo "週五：已彙整本週週線"
-          fi
+# 元大台灣50ETF期貨追蹤 0050 ETF 價位，量級是十幾～數百元，跟台指期完全不同
+PRICE_MIN = 10
+PRICE_MAX = 2000
 
-      - name: 執行三關價分析
-        working-directory: three_gate
-        run: python src/analyze.py
 
-      - name: 產出月彙總報表並寄送Email
-        working-directory: three_gate
-        env:
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-          MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: python src/monthly_report.py
+def to_float(s):
+    try:
+        return float(str(s).replace(",", "").strip())
+    except:
+        return None
 
-      - name: 提交結果到repo
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add three_gate/data/auto/ three_gate/analysis/ three_gate/strategy/ three_gate/reports/
-          # 只有真的有變化才 commit
-          if ! git diff --cached --quiet; then
-            git commit -m "自動更新：三關價格分析 $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M')"
-            git push
-          else
-            echo "無變化，跳過提交"
-          fi
+
+def to_int(s):
+    try:
+        return int(str(s).replace(",", "").strip())
+    except:
+        return 0
+
+
+def is_trading_day(date: datetime) -> bool:
+    return date.weekday() < 5
+
+
+def fetch_session(date: datetime, market_code: str) -> dict | None:
+    """
+    抓取指定日期、時段的 NYF（台灣50期貨）近月合約 OHLC。
+    欄位固定：[2]=O [3]=H [4]=L [5]=C [8]=Vol
+    取成交量最大的那筆（近月合約）。
+    """
+    date_str = date.strftime("%Y/%m/%d")
+    params = {
+        "queryType":    "1",
+        "marketCode":   market_code,
+        "dateaddcnt":   "0",
+        "commodity_id": COMMODITY_ID,
+        "queryDate":    date_str,
+    }
+    try:
+        resp = requests.get(TAIFEX_URL, params=params, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+    except Exception as e:
+        print(f"[ERROR] {date_str} session={market_code}: {e}")
+        return None
+
+    soup = BeautifulSoup(resp.text, "html.parser")
+    best = None
+
+    for table in soup.find_all("table"):
+        for row in table.find_all("tr"):
+            cells = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
+
+            # 第一欄必須是 NYF（用 startswith 容忍可能的後綴文字）
+            if len(cells) < 9 or not cells[0].startswith(COMMODITY_ID):
+                continue
+
+            o   = to_float(cells[2])
+            h   = to_float(cells[3])
+            l   = to_float(cells[4])
+            c   = to_float(cells[5])
+            vol = to_int(cells[8])
+
+            # 驗證價格合理
+            if not all([o, h, l, c]):
+                continue
+            if not (PRICE_MIN < o < PRICE_MAX and
+                    PRICE_MIN < h < PRICE_MAX and
+                    PRICE_MIN < l < PRICE_MAX and
+                    PRICE_MIN < c < PRICE_MAX):
+                continue
+            if h < l or h < o or h < c:
+                continue
+
+            if best is None or vol > best["volume"]:
+                best = {"open": o, "high": h, "low": l, "close": c, "volume": vol}
+
+    return best
+
+
+def fetch_t5f_daily(date: datetime) -> dict | None:
+    if not is_trading_day(date):
+        print(f"[SKIP] {date.strftime('%Y-%m-%d')} 非交易日")
+        return None
+
+    day   = fetch_session(date, "0")   # 日盤
+    night = fetch_session(date, "1")   # 夜盤（ETF 期貨無夜盤則會是 None）
+
+    if day is None and night is None:
+        print(f"[MISS] {date.strftime('%Y-%m-%d')} 無資料（可能休市或代碼不符）")
+        return None
+
+    if day is None:
+        result = {**night}; tag = "夜"
+    elif night is None:
+        result = {**day};   tag = "日"
+    else:
+        result = {
+            "open":   day["open"],
+            "high":   max(day["high"],  night["high"]),
+            "low":    min(day["low"],   night["low"]),
+            "close":  night["close"],
+            "volume": day["volume"] + night["volume"],
+        }
+        tag = "日+夜"
+
+    result["date"] = date.strftime("%Y-%m-%d")
+    print(f"[OK] {result['date']} T5F({tag}) "
+          f"O={result['open']:.2f} H={result['high']:.2f} "
+          f"L={result['low']:.2f}  C={result['close']:.2f} "
+          f"Vol={result['volume']}")
+    return result
+
+
+def load_daily() -> pd.DataFrame:
+    if os.path.exists(DAILY_CSV):
+        return pd.read_csv(DAILY_CSV, parse_dates=["date"])
+    return pd.DataFrame(columns=["date","open","high","low","close","volume"])
+
+
+def save_daily(df: pd.DataFrame):
+    df = df.sort_values("date").reset_index(drop=True)
+    df.to_csv(DAILY_CSV, index=False, date_format="%Y-%m-%d")
+    print(f"[SAVED] 日線 CSV：{DAILY_CSV}（共 {len(df)} 筆）")
+
+
+def upsert(rows) -> pd.DataFrame:
+    if isinstance(rows, dict):
+        rows = [rows]
+    df = load_daily()
+    new = pd.DataFrame(rows)
+    new["date"] = pd.to_datetime(new["date"])
+    # 過濾掉異常值
+    df = df[df["close"] > PRICE_MIN]
+    df = df[~df["date"].isin(new["date"])]
+    df = pd.concat([df, new], ignore_index=True)
+    save_daily(df)
+    return df
+
+
+def build_weekly(df_daily: pd.DataFrame):
+    df = df_daily.copy()
+    df["date"] = pd.to_datetime(df["date"])
+    df = df[df["close"] > PRICE_MIN]   # 過濾異常值
+    df = df.sort_values("date").set_index("date")
+
+    weekly = df.resample("W-FRI").agg(
+        {"open": "first", "high": "max", "low": "min",
+         "close": "last", "volume": "sum"}
+    ).dropna(subset=["open", "close"])
+    weekly = weekly[weekly["open"] > PRICE_MIN].reset_index()
+    weekly.rename(columns={"date": "week_end"}, inplace=True)
+    weekly["week_end"] = weekly["week_end"].dt.strftime("%Y-%m-%d")
+    weekly.to_csv(WEEKLY_CSV, index=False)
+    print(f"[SAVED] 週線 CSV：{WEEKLY_CSV}（共 {len(weekly)} 筆）")
+
+
+def backfill(days: int = 90):
+    print(f"[BACKFILL] 補抓過去 {days} 天（日盤＋夜盤）...")
+    today = datetime.today()
+    rows = []
+    for i in range(days, -1, -1):
+        d = today - timedelta(days=i)
+        row = fetch_t5f_daily(d)
+        if row:
+            rows.append(row)
+        time.sleep(0.8)
+    if rows:
+        df = upsert(rows)
+        build_weekly(df)
+    print(f"[DONE] 共抓到 {len(rows)} 筆")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--date",     type=str, default=None)
+    parser.add_argument("--weekly",   action="store_true")
+    parser.add_argument("--backfill", type=int, default=0)
+    args = parser.parse_args()
+
+    if args.backfill > 0:
+        backfill(args.backfill)
+    else:
+        target = datetime.strptime(args.date, "%Y-%m-%d") if args.date else datetime.today()
+        row = fetch_t5f_daily(target)
+        if row:
+            df = upsert(row)
+        elif os.path.exists(DAILY_CSV):
+            df = load_daily()
+        else:
+            print("[WARN] 無資料，結束")
+            exit(0)
+
+        if args.weekly or target.weekday() == 4:
+            build_weekly(df)
