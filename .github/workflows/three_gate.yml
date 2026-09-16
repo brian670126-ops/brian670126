@@ -49,11 +49,19 @@ jobs:
         working-directory: three_gate
         run: python src/analyze.py
 
+      - name: 產出月彙總報表並寄送Email
+        working-directory: three_gate
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python src/monthly_report.py
+
       - name: 提交結果到repo
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add three_gate/data/auto/ three_gate/analysis/ three_gate/strategy/
+          git add three_gate/data/auto/ three_gate/analysis/ three_gate/strategy/ three_gate/reports/
           # 只有真的有變化才 commit
           if ! git diff --cached --quiet; then
             git commit -m "自動更新：三關價格分析 $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M')"
