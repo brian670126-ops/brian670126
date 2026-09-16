@@ -1,28 +1,28 @@
 {
-  "fetched_at": "2026-09-16T01:58:41.014371",
+  "fetched_at": "2026-09-16T06:02:17.606580",
   "results": {
     "ES": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "NQ": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "YM": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "RTY": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "N225": {
@@ -56,27 +56,27 @@
       "last_weekly": "2026-09-14 00:00:00"
     },
     "GC": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "SI": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "CL": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "NG": {
-      "daily": 61,
+      "daily": 62,
       "weekly": 58,
-      "last_daily": "2026-09-15 00:00:00",
+      "last_daily": "2026-09-16 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "BTC": {
