@@ -2,13 +2,7 @@
 # 每個商品都會計算日/週三關價 + 觸碰 + 方向 + 警訊
 
 # 手動輸入區 (每天你貼 OHLC 到 data/manual/)
-manual:
-  
-  - code: T5F
-    name: 台灣50期貨
-    name_en: Taiwan 50 Futures
-    category: taiwan
-    point_value: 100
+manual: []
 
 # yfinance 自動抓取
 auto:
@@ -18,6 +12,12 @@ auto:
     name_en: Taiwan Index Futures
     category: taiwan
     point_value: 200  # NT$ per point
+  # 台灣50期貨 (元大台灣50ETF期貨，TAIFEX代碼NYF，由 t5f_fetcher.py 專用爬蟲抓取，非 yfinance)
+  - code: T5F
+    name: 台灣50期貨
+    name_en: Taiwan 50 Futures
+    category: taiwan
+    point_value: 100
   # 美股期指
   - code: ES
     yf_symbol: ES=F
@@ -26,7 +26,7 @@ auto:
     category: us_index
     point_value: 50
     tz: America/New_York
-    
+
   - code: NQ
     yf_symbol: NQ=F
     name: Nasdaq 100 期貨
@@ -34,7 +34,7 @@ auto:
     category: us_index
     point_value: 20
     tz: America/New_York
-    
+
   - code: YM
     yf_symbol: YM=F
     name: 道瓊期貨
@@ -42,7 +42,7 @@ auto:
     category: us_index
     point_value: 5
     tz: America/New_York
-    
+
   - code: RTY
     yf_symbol: RTY=F
     name: Russell 2000 期貨
@@ -50,7 +50,7 @@ auto:
     category: us_index
     point_value: 50
     tz: America/New_York
-  
+
   # 亞洲指數
   - code: N225
     yf_symbol: ^N225
@@ -58,21 +58,21 @@ auto:
     name_en: Nikkei 225
     category: asia_index
     tz: Asia/Tokyo
-    
+
   - code: HSI
     yf_symbol: ^HSI
     name: 恆生指數
     name_en: Hang Seng Index
     category: asia_index
     tz: Asia/Hong_Kong
-    
+
   - code: SSE
     yf_symbol: 000001.SS
     name: 上證綜合
     name_en: Shanghai Composite
     category: asia_index
     tz: Asia/Shanghai
-  
+
   # 歐洲指數
   - code: DAX
     yf_symbol: ^GDAXI
@@ -80,14 +80,14 @@ auto:
     name_en: DAX Index
     category: europe_index
     tz: Europe/Berlin
-    
+
   - code: FTSE
     yf_symbol: ^FTSE
     name: FTSE 100
     name_en: FTSE 100 Index
     category: europe_index
     tz: Europe/London
-  
+
   # 商品
   - code: GC
     yf_symbol: GC=F
@@ -96,7 +96,7 @@ auto:
     category: commodity
     point_value: 100
     tz: America/New_York
-    
+
   - code: SI
     yf_symbol: SI=F
     name: 白銀
@@ -104,7 +104,7 @@ auto:
     category: commodity
     point_value: 5000
     tz: America/New_York
-    
+
   - code: CL
     yf_symbol: CL=F
     name: 原油 WTI
@@ -112,7 +112,7 @@ auto:
     category: commodity
     point_value: 1000
     tz: America/New_York
-    
+
   - code: NG
     yf_symbol: NG=F
     name: 天然氣
@@ -120,7 +120,7 @@ auto:
     category: commodity
     point_value: 10000
     tz: America/New_York
-  
+
   # 加密貨幣
   - code: BTC
     yf_symbol: BTC-USD
@@ -128,14 +128,14 @@ auto:
     name_en: Bitcoin
     category: crypto
     tz: UTC
-    
+
   - code: ETH
     yf_symbol: ETH-USD
     name: 以太幣
     name_en: Ethereum
     category: crypto
     tz: UTC
-  
+
   # 匯率
   - code: USDTWD
     yf_symbol: USDTWD=X
