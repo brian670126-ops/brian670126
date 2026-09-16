@@ -64,6 +64,8 @@ def get_ohlc_data(code: str, source: str, period: str) -> pd.DataFrame:
         if not path.exists():
             return pd.DataFrame()
         df = pd.read_csv(path)
+        if 'date' not in df.columns and 'week_end' in df.columns:
+            df = df.rename(columns={'week_end': 'date'})
         df['date'] = pd.to_datetime(df['date'])
         return df.sort_values('date').reset_index(drop=True)
 
