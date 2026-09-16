@@ -18,8 +18,8 @@ auto:
     name_en: Taiwan Index Futures
     category: taiwan
     point_value: 200  # NT$ per point
-    # 美股期指
-    - code: ES
+  # 美股期指
+  - code: ES
     yf_symbol: ES=F
     name: S&P 500 期貨
     name_en: S&P 500 Futures
