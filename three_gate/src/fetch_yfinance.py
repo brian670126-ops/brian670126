@@ -89,9 +89,13 @@ def fetch_all():
     
     for item in cfg.get('auto', []):
         code = item['code']
-        yf_sym = item['yf_symbol']
+        yf_sym = item.get('yf_symbol')
         name = item['name']
-        
+
+        if not yf_sym:
+            print(f"略過 {code} ({name})：無 yfinance 代碼，由專用抓取器負責")
+            continue
+
         print(f"抓取 {code} ({name}) [{yf_sym}]...")
         
         # 日
