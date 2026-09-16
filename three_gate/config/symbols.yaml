@@ -3,12 +3,7 @@
 
 # 手動輸入區 (每天你貼 OHLC 到 data/manual/)
 manual:
-  - code: TX
-    name: 台指期
-    name_en: Taiwan Index Futures
-    category: taiwan
-    point_value: 200  # NT$ per point
-    
+  
   - code: T5F
     name: 台灣50期貨
     name_en: Taiwan 50 Futures
@@ -17,8 +12,14 @@ manual:
 
 # yfinance 自動抓取
 auto:
-  # 美股期指
-  - code: ES
+  # 台指期 (由 tx_fetcher.py 專用爬蟲抓取台灣期交所，非 yfinance)
+  - code: TX
+    name: 台指期
+    name_en: Taiwan Index Futures
+    category: taiwan
+    point_value: 200  # NT$ per point
+    # 美股期指
+    - code: ES
     yf_symbol: ES=F
     name: S&P 500 期貨
     name_en: S&P 500 Futures
