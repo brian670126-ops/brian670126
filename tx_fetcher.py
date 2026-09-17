@@ -1,5 +1,5 @@
 """
-tx_fetcher.py  v5
+tx_fetcher.py  v6
 台指期（TX）資料自動抓取模組
 來源：台灣期貨交易所（taifex.com.tw）
 合併日盤＋夜盤：Open=日盤O, High=max(日H,夜H), Low=min(日L,夜L), Close=夜盤C
@@ -12,6 +12,17 @@ v5 修正重點（結算日換月問題）：
     v5 做法：日盤、夜盤都先抓「所有到期月份」的資料，再用「當天日盤+
     夜盤合計成交量最大」的那個月份為準，日盤、夜盤都固定抓同一個月份
     的資料，避免結算日拼錯合約。
+
+v6 修正重點（夜盤查詢日期差一天的問題）：
+    實測發現台期所網站「查詢日期」填某一天時，夜盤（盤後交易時段）
+    給的其實是「前一天15:00～當天05:00」的資料，也就是查詢日期是用
+    「夜盤結束那天」，不是「夜盤開始那天」。
+    範例：查詢日期填 2026/09/16、盤別選夜盤，網站回傳的表頭寫的是
+    「2026/09/15 15:00~次日05:00」，代表抓到的是9/15晚上的夜盤，不是
+    9/16晚上的。
+    v6 做法：抓「某一天」的資料時，日盤照樣查當天日期；夜盤要查「隔
+    一天」的日期，才會抓到「當天晚上」真正的夜盤，避免日盤、夜盤其實
+    差了一天卻被拼在一起。
 
 台期所欄位順序（已確認）：
 [0]=契約 [1]=到期月份 [2]=開盤價 [3]=最高價 [4]=最低價 [5]=最後成交價
@@ -124,8 +135,8 @@ def fetch_tx_daily(date: datetime) -> dict | None:
         print(f"[SKIP] {date.strftime('%Y-%m-%d')} 非交易日")
         return None
 
-    day_rows   = fetch_session_all(date, "0")   # 日盤，所有月份
-    night_rows = fetch_session_all(date, "1")   # 夜盤，所有月份
+    day_rows   = fetch_session_all(date, "0")                        # 日盤，查當天，所有月份
+    night_rows = fetch_session_all(date + timedelta(days=1), "1")   # 夜盤，要查「隔一天」的日期，才是當天晚上的盤，所有月份
 
     if not day_rows and not night_rows:
         print(f"[MISS] {date.strftime('%Y-%m-%d')} 無資料（可能休市）")
