@@ -1,101 +1,101 @@
 {
-  "fetched_at": "2026-09-20T22:14:30.872197",
+  "fetched_at": "2026-09-21T22:15:28.344340",
   "results": {
     "ES": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "NQ": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "YM": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "RTY": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "N225": {
-      "daily": 63,
+      "daily": 62,
       "weekly": 57,
       "last_daily": "2026-09-18 00:00:00",
       "last_weekly": "2026-09-14 00:00:00"
     },
     "HSI": {
       "daily": 64,
-      "weekly": 57,
-      "last_daily": "2026-09-18 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "SSE": {
       "daily": 65,
-      "weekly": 56,
-      "last_daily": "2026-09-18 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "weekly": 57,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "DAX": {
       "daily": 65,
-      "weekly": 57,
-      "last_daily": "2026-09-18 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "FTSE": {
       "daily": 64,
-      "weekly": 57,
-      "last_daily": "2026-09-18 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "GC": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "SI": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "CL": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "NG": {
-      "daily": 63,
-      "weekly": 57,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "daily": 62,
+      "weekly": 58,
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "BTC": {
       "daily": 91,
       "weekly": 58,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "ETH": {
       "daily": 91,
       "weekly": 58,
-      "last_daily": "2026-09-20 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     },
     "USDTWD": {
       "daily": 65,
       "weekly": 58,
-      "last_daily": "2026-09-18 00:00:00",
-      "last_weekly": "2026-09-14 00:00:00"
+      "last_daily": "2026-09-21 00:00:00",
+      "last_weekly": "2026-09-21 00:00:00"
     }
   }
 }
