@@ -325,7 +325,7 @@ def write_report(stats: dict, years: int, skipped: list[str]):
 
 def main():
     parser = argparse.ArgumentParser(description="原油近月-遠月價差 vs 近月價格走勢同向性回測")
-    parser.add_argument("--years", type=float, default=3.0, help="往回看幾年（預設3年）")
+    parser.add_argument("--years", type=float, default=0.3, help="往回看幾年（預設3年）")
     args = parser.parse_args()
 
     print("=" * 60)
