@@ -30,4 +30,4 @@ from pathlib import Path
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from three_gate_calc import OHLC, calc_three_gate, determine_direction,
+from three_gate_calc import OHLC, calc_three_gate, determine_direction, calc_touch_symbols  # noqa: E402
