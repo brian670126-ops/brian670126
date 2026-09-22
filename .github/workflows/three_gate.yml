@@ -39,6 +39,10 @@ jobs:
       - name: 抓取原油近遠月價差
         working-directory: three_gate
         run: python src/fetch_cl_spread.py
+        
+      - name: 分析原油價差三關價
+        working-directory: three_gate
+        run: python src/analyze_cl_spread.py
 
       - name: 抓取TX台指期資料
         run: |
