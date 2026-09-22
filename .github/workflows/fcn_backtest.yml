@@ -1,0 +1,36 @@
+name: FCN 美股回測（一次性）
+
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run-backtest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 簽出 repo
+        uses: actions/checkout@v4
+
+      - name: 設定 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安裝套件
+        run: pip install pandas numpy yfinance
+
+      - name: 執行 FCN 回測
+        run: |
+          mkdir -p reports
+          python fcn_backtest.py --tickers NVDA,AMD,TSM,INTC,MU,GOOGL,META,AAPL,MSFT,TSLA,UNH,DELL,ARM --out reports/fcn_backtest.csv --years 5
+
+      - name: 把結果存回 repo
+        run: |
+          git config user.name "fcn-backtest-bot"
+          git config user.email "actions@github.com"
+          git add reports/fcn_backtest.csv reports/fcn_backtest_errors.csv 2>/dev/null || true
+          git add reports/fcn_backtest.csv
+          git diff --quiet --cached || git commit -m "FCN回測結果：$(date -u +'%Y-%m-%d %H:%M UTC')"
+          git push
