@@ -189,39 +189,32 @@ def chips_row(label, value, positive_good=True):
 
 
 def build_html(tx_d, tx_w, t5f_d, latest_text):
-    # --- TX Daily ---
     tx_close     = parse_value(tx_d, '收盤')
     tx_direction = parse_value(tx_d, '方向')
     tx_alert     = parse_value(tx_d, '警訊')
     tx_date      = parse_value(tx_d, '日期')
     tx_range     = parse_value(tx_d, '區間')
 
-    # --- TX Weekly ---
     tx_w_direction = parse_value(tx_w, '方向')
     tx_w_alert     = parse_value(tx_w, '警訊')
     tx_w_range     = parse_value(tx_w, '區間')
 
-    # --- T5F Daily ---
     t5f_close     = parse_value(t5f_d, '收盤')
     t5f_direction = parse_value(t5f_d, '方向')
     t5f_alert     = parse_value(t5f_d, '警訊')
 
-    # --- 三關價 ---
     m = re.search(r'(?:明日|下一交易日)[預測三關價：:\s]*(.+?)(?:\n\n|\Z)', tx_d, re.S)
     tomorrow_gates_text = m.group(0) if m else tx_d[-500:]
     gates = parse_gates(tomorrow_gates_text if m else tx_d)
 
-    # --- 法人籌碼 ---
     foreign   = parse_value(tx_d, '外資')
     trust     = parse_value(tx_d, '投信')
     dealer    = parse_value(tx_d, '自營商')
     margin    = parse_value(tx_d, '融資')
     short_pos = parse_value(tx_d, '融券')
 
-    # --- latest.md ---
     commodities, bull_list, bear_list, warn_list = parse_latest(latest_text)
 
-    # ---- HTML ----
     html = (
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -249,7 +242,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</style></head><body><div class="wrap">'
     )
 
-    # Header
     html += (
         '<div class="header">'
         '<h1>📊 蘭老師 TX 日K線分析報告</h1>'
@@ -257,7 +249,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # TX Daily Overview
     html += (
         '<div class="section">'
         '<h2>📈 台指期（TX）日線總覽</h2>'
@@ -271,7 +262,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # 三關價
     html += (
         '<div class="section">'
         '<h2>🚦 明日預測三關價</h2>'
@@ -279,7 +269,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # Weekly
     html += (
         '<div class="section">'
         '<h2>📅 週線概況</h2>'
@@ -291,7 +280,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # T5F
     html += (
         '<div class="section">'
         '<h2>🔷 台灣50期貨（T5F）日線</h2>'
@@ -303,7 +291,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # Chips
     if any(v != '-' for v in [foreign, trust, dealer]):
         html += (
             '<div class="section">'
@@ -318,7 +305,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
             '</div>'
         )
 
-    # 18商品總覽
     if commodities:
         html += (
             '<div class="section">'
@@ -348,7 +334,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
             html += '<p><span class="tag warn">警訊</span> ' + '、'.join(warn_list[:8]) + '</p>'
         html += '</div>'
 
-    # 老師的叮嚀
     html += (
         '<div class="section" style="background:#fffbf0;">'
         '<h2>🎓 老師的叮嚀</h2>'
@@ -367,7 +352,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
     )
 
-    # Footer
     html += (
         '<div class="footer">'
         '<p>📌 投資的最終決策權在您自己。本報告基於三關價系統自動產生，僅供參考。</p>'
@@ -401,15 +385,23 @@ def send_email(html_body):
 
 
 def main():
-    tx_d      = read_md(TX_DAILY)
-    tx_w      = read_md(TX_WEEKLY)
-    t5f_d     = read_md(T5F_DAILY)
-    latest    = read_md(LATEST_MD)
+    tx_d   = read_md(TX_DAILY)
+    tx_w   = read_md(TX_WEEKLY)
+    t5f_d  = read_md(T5F_DAILY)
+    latest = read_md(LATEST_MD)
 
     if not tx_d:
         print('WARNING: TX_daily.md not found, sending empty report')
 
     html = build_html(tx_d, tx_w, t5f_d, latest)
+
+    # 存 HTML 檔案到 reports/
+    report_dir = BASE / 'three_gate' / 'reports'
+    report_dir.mkdir(parents=True, exist_ok=True)
+    report_path = report_dir / ('kline_report_' + TODAY + '.html')
+    report_path.write_text(html, encoding='utf-8')
+    print('HTML saved to', report_path)
+
     send_email(html)
 
 
