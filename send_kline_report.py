@@ -32,35 +32,82 @@ def read_md(path):
         return ''
 
 
-def parse_value(text, key):
-    m = re.search(r'\*\*' + re.escape(key) + r'\*\*[：:]\s*(.+)', text)
+def parse_close(text):
+    # "closed at 48,497.00" or "收盤: 48497"
+    m = re.search(r'closed at ([\d,\.]+)', text)
     if m:
         return m.group(1).strip()
-    m = re.search(re.escape(key) + r'[：:]\s*(.+)', text)
+    m = re.search(r'收盤[：:]\s*([\d,\.]+)', text)
     if m:
         return m.group(1).strip()
     return '-'
 
 
+def parse_direction(text):
+    if '多方' in text or 'bullish' in text.lower():
+        return '多方'
+    if '空方' in text or 'bearish' in text.lower():
+        return '空方'
+    return '中性'
+
+
+def parse_alert(text):
+    if '強警訊' in text or 'strong warning' in text.lower():
+        return '強警訊'
+    if '中警訊' in text or 'moderate warning' in text.lower():
+        return '中警訊'
+    if '弱警訊' in text or 'weak warning' in text.lower():
+        return '弱警訊'
+    if '無警訊' in text or 'no warning' in text.lower():
+        return '無警訊'
+    return '-'
+
+
+def parse_date(text):
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', text)
+    if m:
+        return m.group(1)
+    return TODAY
+
+
+def parse_range(text):
+    # 多方主戰場 or similar
+    for kw in ['多方主戰場', '整理區', '空方主戰場', 'primary battleground', 'core safety zone', 'consolidation']:
+        if kw in text:
+            return kw
+    return '-'
+
+
 def parse_gates(text):
     gates = {}
-    for key in ['B3', 'B2', 'B1', 'M', 'S1', 'S2', 'S3']:
-        m = re.search(key + r'[：:]\s*([\d,\.]+)', text)
-        if m:
-            try:
-                gates[key] = float(m.group(1).replace(',', ''))
-            except Exception:
-                gates[key] = 0.0
-        else:
+    patterns = {
+        'B3': [r'B3[：:\s]*([\d,\.]+)', r'Resistance 3[：:\s]*([\d,\.]+)', r'B3.*?([\d,\.]{5,})'],
+        'B2': [r'B2[：:\s]*([\d,\.]+)', r'Resistance 2[：:\s]*([\d,\.]+)', r'B2.*?([\d,\.]{5,})'],
+        'B1': [r'B1[：:\s]*([\d,\.]+)', r'Resistance 1[：:\s]*([\d,\.]+)', r'B1.*?([\d,\.]{5,})'],
+        'M':  [r'\bM[：:\s]*([\d,\.]+)', r'Midpoint.*?([\d,\.]{5,})', r'中樞.*?([\d,\.]{5,})'],
+        'S1': [r'S1[：:\s]*([\d,\.]+)', r'Support 1[：:\s]*([\d,\.]+)', r'S1.*?([\d,\.]{5,})'],
+        'S2': [r'S2[：:\s]*([\d,\.]+)', r'Support 2[：:\s]*([\d,\.]+)', r'S2.*?([\d,\.]{5,})'],
+        'S3': [r'S3[：:\s]*([\d,\.]+)', r'Support 3[：:\s]*([\d,\.]+)', r'S3.*?([\d,\.]{5,})'],
+    }
+    for key, pats in patterns.items():
+        for pat in pats:
+            m = re.search(pat, text)
+            if m:
+                try:
+                    gates[key] = float(m.group(1).replace(',', ''))
+                    break
+                except Exception:
+                    pass
+        if key not in gates:
             gates[key] = 0.0
     return gates
 
 
 def direction_badge(direction):
     d = str(direction)
-    if '多' in d:
+    if '多' in d or 'bull' in d.lower():
         return '<span style="background:#e74c3c;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;">多方</span>'
-    elif '空' in d:
+    elif '空' in d or 'bear' in d.lower():
         return '<span style="background:#27ae60;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;">空方</span>'
     else:
         return '<span style="background:#f39c12;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;">中性</span>'
@@ -101,7 +148,7 @@ def gate_bar_html(gates, close_str):
         val = gates.get(key, 0.0)
         if val == 0.0:
             continue
-        is_close = abs(val - close) < 50 if close > 0 else False
+        is_close = abs(val - close) < 100 if close > 0 else False
         border = '3px solid #2c3e50' if is_close else '1px solid transparent'
         val_fmt = '{:,.0f}'.format(val)
         rows += (
@@ -115,6 +162,8 @@ def gate_bar_html(gates, close_str):
             '</td>'
             '</tr>'
         )
+    if not rows:
+        return '<p style="color:#95a5a6;">三關價資料待更新</p>'
     return '<table style="border-collapse:collapse;">' + rows + '</table>'
 
 
@@ -130,25 +179,13 @@ def parse_latest(text):
     for line in lines:
         line = line.strip()
         if '多方' in line and ('商品' in line or '列表' in line or '清單' in line):
-            in_bull = True
-            in_bear = False
-            in_warn = False
-            continue
+            in_bull = True; in_bear = False; in_warn = False; continue
         if '空方' in line and ('商品' in line or '列表' in line or '清單' in line):
-            in_bull = False
-            in_bear = True
-            in_warn = False
-            continue
+            in_bull = False; in_bear = True; in_warn = False; continue
         if '警訊' in line and ('商品' in line or '列表' in line or '清單' in line):
-            in_bull = False
-            in_bear = False
-            in_warn = True
-            continue
+            in_bull = False; in_bear = False; in_warn = True; continue
         if line.startswith('#'):
-            in_bull = False
-            in_bear = False
-            in_warn = False
-            continue
+            in_bull = False; in_bear = False; in_warn = False; continue
         if line.startswith('|') and '|' in line[1:]:
             parts = [p.strip() for p in line.split('|') if p.strip()]
             if len(parts) >= 2 and '---' not in parts[0]:
@@ -163,55 +200,22 @@ def parse_latest(text):
     return commodities, bull, bear, warn
 
 
-def chips_row(label, value, positive_good=True):
-    v = str(value).replace(',', '').replace('+', '').strip()
-    try:
-        num = float(v)
-        if num > 0:
-            color = '#e74c3c' if positive_good else '#27ae60'
-            sign = '+'
-        elif num < 0:
-            color = '#27ae60' if positive_good else '#e74c3c'
-            sign = ''
-        else:
-            color = '#95a5a6'
-            sign = ''
-        disp = sign + '{:,.0f}'.format(num)
-    except Exception:
-        color = '#95a5a6'
-        disp = value
-    return (
-        '<tr>'
-        '<td style="padding:4px 12px;color:#7f8c8d;">' + label + '</td>'
-        '<td style="padding:4px 12px;font-weight:bold;color:' + color + ';">' + disp + '</td>'
-        '</tr>'
-    )
-
-
 def build_html(tx_d, tx_w, t5f_d, latest_text):
-    tx_close     = parse_value(tx_d, '收盤')
-    tx_direction = parse_value(tx_d, '方向')
-    tx_alert     = parse_value(tx_d, '警訊')
-    tx_date      = parse_value(tx_d, '日期')
-    tx_range     = parse_value(tx_d, '區間')
+    tx_close     = parse_close(tx_d)
+    tx_direction = parse_direction(tx_d)
+    tx_alert     = parse_alert(tx_d)
+    tx_date      = parse_date(tx_d)
+    tx_range     = parse_range(tx_d)
 
-    tx_w_direction = parse_value(tx_w, '方向')
-    tx_w_alert     = parse_value(tx_w, '警訊')
-    tx_w_range     = parse_value(tx_w, '區間')
+    tx_w_direction = parse_direction(tx_w)
+    tx_w_alert     = parse_alert(tx_w)
+    tx_w_range     = parse_range(tx_w)
 
-    t5f_close     = parse_value(t5f_d, '收盤')
-    t5f_direction = parse_value(t5f_d, '方向')
-    t5f_alert     = parse_value(t5f_d, '警訊')
+    t5f_close     = parse_close(t5f_d)
+    t5f_direction = parse_direction(t5f_d)
+    t5f_alert     = parse_alert(t5f_d)
 
-    m = re.search(r'(?:明日|下一交易日)[預測三關價：:\s]*(.+?)(?:\n\n|\Z)', tx_d, re.S)
-    tomorrow_gates_text = m.group(0) if m else tx_d[-500:]
-    gates = parse_gates(tomorrow_gates_text if m else tx_d)
-
-    foreign   = parse_value(tx_d, '外資')
-    trust     = parse_value(tx_d, '投信')
-    dealer    = parse_value(tx_d, '自營商')
-    margin    = parse_value(tx_d, '融資')
-    short_pos = parse_value(tx_d, '融券')
+    gates = parse_gates(tx_d)
 
     commodities, bull_list, bear_list, warn_list = parse_latest(latest_text)
 
@@ -290,20 +294,6 @@ def build_html(tx_d, tx_w, t5f_d, latest_text):
         '</div>'
         '</div>'
     )
-
-    if any(v != '-' for v in [foreign, trust, dealer]):
-        html += (
-            '<div class="section">'
-            '<h2>💼 法人籌碼 / 融資券</h2>'
-            '<table style="border-collapse:collapse;">'
-            + chips_row('外資', foreign, True)
-            + chips_row('投信', trust, True)
-            + chips_row('自營商', dealer, True)
-            + chips_row('融資餘額', margin, False)
-            + chips_row('融券餘額', short_pos, False) +
-            '</table>'
-            '</div>'
-        )
 
     if commodities:
         html += (
@@ -395,7 +385,6 @@ def main():
 
     html = build_html(tx_d, tx_w, t5f_d, latest)
 
-    # 存 HTML 檔案到 reports/
     report_dir = BASE / 'three_gate' / 'reports'
     report_dir.mkdir(parents=True, exist_ok=True)
     report_path = report_dir / ('kline_report_' + TODAY + '.html')
