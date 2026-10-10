@@ -2,7 +2,7 @@ name: 三關價系統 - 每日全球商品分析
 
 on:
   schedule:
-    - cron: '0 22 * * 0-4'
+    - cron: '0 22 * * 0-5'
   workflow_dispatch:
 
 jobs:
@@ -71,12 +71,31 @@ jobs:
           MAIL_TO: ${{ secrets.MAIL_TO }}
         run: python src/monthly_report.py
 
-      - name: 寄送 TX 日K線分析報告
+      - name: 寄送 TX 日K線分析報告（週一至週五）
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
-        run: python send_kline_report.py
+        run: |
+          DAY=$(TZ='Asia/Taipei' date +%u)
+          if [ "$DAY" != "6" ]; then
+            python send_kline_report.py
+          else
+            echo "週六：跳過日報"
+          fi
+
+      - name: 寄送週報（週六）
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: |
+          DAY=$(TZ='Asia/Taipei' date +%u)
+          if [ "$DAY" = "6" ]; then
+            python send_weekly_report.py
+          else
+            echo "非週六：跳過週報"
+          fi
 
       - name: 提交結果到repo
         run: |
