@@ -102,7 +102,7 @@ def direction_badge(bull):
     return '<span style="background:#27ae60;color:#fff;padding:2px 10px;border-radius:4px;font-weight:bold;">🔴 空方</span>'
 
 
-def gate_table_weekly(gates, close, label='下週三關價'):
+def gate_table_weekly(gates, close, label='下週三關價', decimals=0):
     """週線三關價表格"""
     rows = [
         ('B3', '壓3', '#c0392b', gates.get('b3')),
@@ -113,6 +113,7 @@ def gate_table_weekly(gates, close, label='下週三關價'):
         ('S2', '超賣警示', '#1abc9c', gates.get('s2')),
         ('S3', '撐3',  '#16a085', gates.get('s3')),
     ]
+    fmt = '{:,.' + str(decimals) + 'f}'
     html = '<table style="border-collapse:collapse;width:100%;margin-bottom:16px;">'
     html += ('<tr style="background:#f8f9fa;">'
              '<th style="padding:8px 12px;text-align:left;font-size:13px;color:#7f8c8d;">關卡</th>'
@@ -123,8 +124,8 @@ def gate_table_weekly(gates, close, label='下週三關價'):
     for key, lbl, color, val in rows:
         if not val:
             continue
-        diff = round(val - close, 0) if close else 0
-        diff_str = ('+' if diff >= 0 else '') + '{:,.0f}'.format(diff)
+        diff = round(val - close, decimals) if close else 0
+        diff_str = ('+' if diff >= 0 else '') + fmt.format(diff)
         near = abs(diff) < 300 if close else False
         bg = '#fffde7' if near else '#fff'
         html += (
@@ -132,7 +133,7 @@ def gate_table_weekly(gates, close, label='下週三關價'):
             '<td style="padding:8px 12px;font-weight:bold;color:' + color + ';font-size:16px;">' + key + '</td>'
             '<td style="padding:8px 12px;color:#555;font-size:13px;">' + lbl + '</td>'
             '<td style="padding:8px 12px;font-family:monospace;font-size:16px;font-weight:bold;">'
-            + '{:,.0f}'.format(val) + '</td>'
+            + fmt.format(val) + '</td>'
             '<td style="padding:8px 12px;color:' + ('#e74c3c' if diff > 0 else '#27ae60')
             + ';font-size:13px;font-weight:bold;">' + diff_str + '</td>'
             '</tr>'
@@ -141,9 +142,10 @@ def gate_table_weekly(gates, close, label='下週三關價'):
     return html
 
 
-def week_summary_table(this_week, prev_week_row):
+def week_summary_table(this_week, prev_week_row, decimals=0):
     """本週 vs 上週對比"""
     rows_data = []
+    fmt = '{:,.' + str(decimals) + 'f}'
     if prev_week_row:
         pc = safe_float(prev_week_row.get('close', 0))
         ph = safe_float(prev_week_row.get('high',  0))
@@ -173,17 +175,17 @@ def week_summary_table(this_week, prev_week_row):
     for label, date, o, h, l, c, v, oi in rows_data:
         chg = c - prev_close if prev_close else 0
         chg_pct = chg / prev_close * 100 if prev_close else 0
-        chg_str = ('+' if chg >= 0 else '') + '{:.0f} ({:.1f}%)'.format(chg, chg_pct) if prev_close else '-'
+        chg_str = ('+' if chg >= 0 else '') + (fmt + ' ({:.1f}%)').format(chg, chg_pct) if prev_close else '-'
         chg_color = '#e74c3c' if chg >= 0 else '#27ae60'
         bg = '#f0fff0' if label == '本週' else '#fff'
         html += (
             '<tr style="background:' + bg + ';border-bottom:1px solid #e0e0e0;">'
             '<td style="padding:8px 12px;font-weight:bold;">' + label + '</td>'
             '<td style="padding:8px 12px;color:#7f8c8d;font-size:12px;">' + date + '</td>'
-            '<td style="padding:8px 12px;font-family:monospace;">' + '{:,.0f}'.format(o) + '</td>'
-            '<td style="padding:8px 12px;font-family:monospace;color:#e74c3c;">' + '{:,.0f}'.format(h) + '</td>'
-            '<td style="padding:8px 12px;font-family:monospace;color:#27ae60;">' + '{:,.0f}'.format(l) + '</td>'
-            '<td style="padding:8px 12px;font-family:monospace;font-weight:bold;">' + '{:,.0f}'.format(c) + '</td>'
+            '<td style="padding:8px 12px;font-family:monospace;">' + fmt.format(o) + '</td>'
+            '<td style="padding:8px 12px;font-family:monospace;color:#e74c3c;">' + fmt.format(h) + '</td>'
+            '<td style="padding:8px 12px;font-family:monospace;color:#27ae60;">' + fmt.format(l) + '</td>'
+            '<td style="padding:8px 12px;font-family:monospace;font-weight:bold;">' + fmt.format(c) + '</td>'
             '<td style="padding:8px 12px;color:#7f8c8d;">' + '{:,}'.format(v) + '</td>'
             '<td style="padding:8px 12px;color:#7f8c8d;">' + ('{:,}'.format(oi) if oi else '-') + '</td>'
             '</tr>'
@@ -508,13 +510,13 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
     # ── 五、T5F 本週回顧 + 下週三關價 ──
     html += '<div class="section"><h2>🔷 五、台灣50（T5F）本週回顧 + 下週三關價</h2>'
     if t5f_this_week:
-        html += week_summary_table(t5f_this_week, t5f_prev_w)
+        html += week_summary_table(t5f_this_week, t5f_prev_w, decimals=2)
         html += '<h3 style="margin-top:18px;">T5F 下週三關價（依本週OHLC計算）</h3>'
         html += '<p style="font-size:12px;color:#7f8c8d;">開 {:.2f} 高 {:.2f} 低 {:.2f} 收 {:.2f}</p>'.format(
             t5f_this_week['open'], t5f_this_week['high'],
             t5f_this_week['low'],  t5f_this_week['close'])
         if t5f_next_gates:
-            html += gate_table_weekly(t5f_next_gates, t5f_this_week['close'])
+            html += gate_table_weekly(t5f_next_gates, t5f_this_week['close'], decimals=2)
     html += '</div>'
 
     # ── 六、近8週歷史 ──
