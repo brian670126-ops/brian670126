@@ -1,5 +1,5 @@
 """
-tx_fetcher.py  v6
+tx_fetcher.py  v7
 台指期（TX）資料自動抓取模組
 來源：台灣期貨交易所（taifex.com.tw）
 合併日盤＋夜盤：Open=日盤O, High=max(日H,夜H), Low=min(日L,夜L), Close=夜盤C
@@ -23,6 +23,13 @@ v6 修正重點（夜盤查詢日期差一天的問題）：
     v6 做法：抓「某一天」的資料時，日盤照樣查當天日期；夜盤要查「隔
     一天」的日期，才會抓到「當天晚上」真正的夜盤，避免日盤、夜盤其實
     差了一天卻被拼在一起。
+
+v7 修正重點（日盤未開盤時不寫入資料）：
+    workflow 在台灣時間 07:xx 執行，此時當天日盤尚未開盤（08:45才開）。
+    若日盤無資料，代表今天還沒開盤，不應寫入今天的資料，避免把昨晚
+    夜盤誤當今天全日資料存入 CSV。
+    v7 做法：日盤無資料時直接 return None，跳過今天，等隔天 backfill
+    補回正確的完整資料。
 
 台期所欄位順序（已確認）：
 [0]=契約 [1]=到期月份 [2]=開盤價 [3]=最高價 [4]=最低價 [5]=最後成交價
@@ -140,6 +147,11 @@ def fetch_tx_daily(date: datetime) -> dict | None:
 
     if not day_rows and not night_rows:
         print(f"[MISS] {date.strftime('%Y-%m-%d')} 無資料（可能休市）")
+        return None
+
+    # v7：日盤無資料 = 今天還沒開盤，不寫入，避免把夜盤誤當全日資料
+    if not day_rows:
+        print(f"[SKIP] {date.strftime('%Y-%m-%d')} 日盤無資料，尚未開盤，跳過")
         return None
 
     # 以「日盤+夜盤合計成交量最大」的月份為準，日盤、夜盤都固定取該月份
