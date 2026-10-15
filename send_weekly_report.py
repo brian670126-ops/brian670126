@@ -415,7 +415,7 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
 
     # T5F
     t5f_this_week = get_this_week_ohlcv(t5f_daily)
-    t5f_prev_w, _ = get_prev_week_ohlcv(t5f_weekly)
+    t5f_prev_w, t5f_prev2_w = get_prev_week_ohlcv(t5f_weekly)
     t5f_env, t5f_env_desc = environment_judgment(t5f_weekly)
     if t5f_this_week:
         t5f_next_gates = calc_gates(
@@ -487,7 +487,7 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
     # ── 二、TX 本週回顧 ──
     html += '<div class="section"><h2>📈 二、台指期（TX）本週回顧</h2>'
     if tx_this_week:
-        html += week_summary_table(tx_this_week, tx_prev_w)
+        html += week_summary_table(tx_this_week, tx_prev2_w)
     html += '</div>'
 
     # ── 三、TX 本週訊號分析 ──
@@ -510,7 +510,7 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
     # ── 五、T5F 本週回顧 + 下週三關價 ──
     html += '<div class="section"><h2>🔷 五、台灣50（T5F）本週回顧 + 下週三關價</h2>'
     if t5f_this_week:
-        html += week_summary_table(t5f_this_week, t5f_prev_w, decimals=2)
+        html += week_summary_table(t5f_this_week, t5f_prev2_w, decimals=2)
         html += '<h3 style="margin-top:18px;">T5F 下週三關價（依本週OHLC計算）</h3>'
         html += '<p style="font-size:12px;color:#7f8c8d;">開 {:.2f} 高 {:.2f} 低 {:.2f} 收 {:.2f}</p>'.format(
             t5f_this_week['open'], t5f_this_week['high'],
