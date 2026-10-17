@@ -44,19 +44,31 @@ jobs:
       - name: 抓取TX台指期資料
         run: |
           pip install requests beautifulsoup4 -q
-          python tx_fetcher.py --backfill 2
-          if [ "$(date +%u)" = "5" ]; then
+          DAY=$(TZ='Asia/Taipei' date +%u)
+          if [ "$DAY" = "1" ]; then
+            python tx_fetcher.py --backfill 7
+            echo "週一：backfill 7 天，補週五夜盤"
+          else
+            python tx_fetcher.py --backfill 2
+          fi
+          if [ "$DAY" = "6" ]; then
             python tx_fetcher.py --weekly
-            echo "週五：已彙整本週週線"
+            echo "週六：已彙整本週週線"
           fi
 
       - name: 抓取台灣50期貨資料
         run: |
           pip install requests beautifulsoup4 -q
-          python t5f_fetcher.py --backfill 2
-          if [ "$(date +%u)" = "5" ]; then
+          DAY=$(TZ='Asia/Taipei' date +%u)
+          if [ "$DAY" = "1" ]; then
+            python t5f_fetcher.py --backfill 7
+            echo "週一：backfill 7 天，補週五夜盤"
+          else
+            python t5f_fetcher.py --backfill 2
+          fi
+          if [ "$DAY" = "6" ]; then
             python t5f_fetcher.py --weekly
-            echo "週五：已彙整本週週線"
+            echo "週六：已彙整本週週線"
           fi
 
       - name: 執行三關價分析
