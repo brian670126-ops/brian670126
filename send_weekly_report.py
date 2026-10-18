@@ -431,6 +431,16 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
     now = datetime.now(TW)
     week_num = now.isocalendar()[1]
 
+    # 更正版標記
+    resend = os.environ.get('WEEKLY_RESEND', '') == 'true'
+    resend_banner = ''
+    if resend:
+        resend_banner = (
+            '<div style="background:#fff3cd;border:1px solid #ffc107;'
+            'padding:10px 20px;text-align:center;font-size:13px;color:#856404;">'
+            '⚠️ 此為更正版週報 — 已補入週五夜盤正確收盤價，三關價已重新計算</div>'
+        )
+
     html = (
         '<!DOCTYPE html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
@@ -454,6 +464,8 @@ def build_weekly_html(tx_daily, t5f_daily, tx_weekly, t5f_weekly):
         'color:#7f8c8d;text-align:center;}'
         '</style></head><body><div class="wrap">'
     )
+
+    html += resend_banner
 
     html += (
         '<div class="header">'
@@ -575,7 +587,9 @@ def send_email(html_body):
     msg = MIMEMultipart('alternative')
     now = datetime.now(TW)
     week_num = now.isocalendar()[1]
-    msg['Subject'] = '📋 蘭老師週報 第{}週 {} 下週三關價出爐'.format(week_num, TODAY)
+    resend = os.environ.get('WEEKLY_RESEND', '') == 'true'
+    subject_suffix = '（更正版）' if resend else ''
+    msg['Subject'] = '📋 蘭老師週報 第{}週 {} 下週三關價出爐{}'.format(week_num, TODAY, subject_suffix)
     msg['From']    = smtp_user
     msg['To']      = mail_to
     msg.attach(MIMEText(html_body, 'html', 'utf-8'))
