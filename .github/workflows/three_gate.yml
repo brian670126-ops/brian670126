@@ -154,6 +154,7 @@ jobs:
           git add three_gate/data/auto/ three_gate/analysis/ three_gate/strategy/ three_gate/reports/
           if ! git diff --cached --quiet; then
             git commit -m "自動更新：三關價格分析 $(TZ='Asia/Taipei' date '+%Y-%m-%d %H:%M')"
+            git pull --rebase origin main
             git push
           else
             echo "無變化，跳過提交"
