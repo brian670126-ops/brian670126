@@ -558,6 +558,172 @@ def build_gate_table(gates, today_row, prev_row, label, is_t5f=False):
   </div>
 </div>'''
 
+# ── 統計面板（5/10/20日 極值+MA+M生命線）──────────────────
+def build_stats_panel(rows, label, is_t5f=False):
+    """
+    rows: 含今日的 N 筆 OHLC（需至少 21 筆以支援 20 日計算）
+    輸出三個子區塊：
+      1. 5/10/20日 極值（最高/最低，含日期、距今幾日）
+      2. 5/10/20日 移動均值（收盤/高/低）
+      3. M生命線（近5日M值的5日MA）
+    """
+    fmt = '.2f' if is_t5f else '.0f'
+    if len(rows) < 2:
+        return f'<div class="col"><div class="clabel">{label} 統計</div><p style="color:var(--fg3);padding:10px;">資料不足</p></div>'
+
+    today_row = rows[-1]
+    today_date = today_row.get('date', '')
+
+    def days_ago(date_str):
+        """計算 date_str 距今日 today_date 的交易日數（用行數差）"""
+        for i, r in enumerate(rows):
+            if r.get('date','') == date_str:
+                return len(rows) - 1 - i
+        return 0
+
+    def short_date(date_str):
+        return date_str[-5:].replace('-','/')
+
+    # 統計函數：計算近 N 日（含今日）的極值與均值
+    def calc_stats(n):
+        sample = rows[-n:] if len(rows) >= n else rows
+        if not sample:
+            return {}
+        highs  = [(float(r.get('high',0) or 0), r.get('date','')) for r in sample]
+        lows   = [(float(r.get('low',0) or 0),  r.get('date','')) for r in sample]
+        closes = [float(r.get('close',0) or 0) for r in sample]
+
+        max_h, max_h_date = max(highs, key=lambda x: x[0])
+        min_l, min_l_date = min(lows,  key=lambda x: x[0])
+
+        return {
+            'n': n,
+            'max_h': max_h, 'max_h_date': max_h_date,
+            'min_l': min_l, 'min_l_date': min_l_date,
+            'ma_close': sum(closes)/len(closes),
+            'ma_high':  sum(h for h,_ in highs)/len(highs),
+            'ma_low':   sum(l for l,_ in lows)/len(lows),
+        }
+
+    stats = {n: calc_stats(n) for n in [5, 10, 20]}
+
+    # M生命線：近5日（含今日）的M值平均
+    m_rows = rows[-5:] if len(rows) >= 5 else rows
+    m_vals = []
+    for r in m_rows:
+        h2 = float(r.get('high',0) or 0)
+        l2 = float(r.get('low',0) or 0)
+        c2 = float(r.get('close',0) or 0)
+        if h2 and l2 and c2:
+            m_vals.append((h2 + l2 + 2*c2) / 4)
+    m5_line = sum(m_vals)/len(m_vals) if m_vals else 0.0
+    today_c = float(today_row.get('close',0) or 0)
+    m5_diff = today_c - m5_line
+    m5_diff_str = f'+{m5_diff:{fmt}}' if m5_diff > 0 else f'{m5_diff:{fmt}}'
+    m5_color = '#f85149' if m5_diff > 0 else ('#3fb950' if m5_diff < 0 else '#8b949e')
+
+    # 色彩：高點紅、低點綠
+    def hval(v, is_high=True):
+        c2 = '#f85149' if is_high else '#3fb950'
+        return f'<span style="color:{c2};font-weight:700;">{v:{fmt}}</span>'
+
+    def ma_color(ma_val, ref_val):
+        if ref_val > ma_val:
+            return '#f85149'  # 現值高於均→紅（多）
+        elif ref_val < ma_val:
+            return '#3fb950'
+        return '#8b949e'
+
+    # 構建極值列
+    def ext_rows_html():
+        html = ''
+        for n in [5, 10, 20]:
+            s = stats[n]
+            if not s:
+                continue
+            hd = days_ago(s['max_h_date'])
+            ld = days_ago(s['min_l_date'])
+            hd_str = f'{short_date(s["max_h_date"])}・{hd}日前' if hd > 0 else f'{short_date(s["max_h_date"])}・今日'
+            ld_str = f'{short_date(s["min_l_date"])}・{ld}日前' if ld > 0 else f'{short_date(s["min_l_date"])}・今日'
+            html += f'''<tr>
+              <td style="font-weight:700;color:#8b949e;white-space:nowrap;">近{n}日</td>
+              <td style="text-align:right;">{hval(s["max_h"],True)}<br><span style="font-size:.6rem;color:#8b949e;">{hd_str}</span></td>
+              <td style="text-align:right;">{hval(s["min_l"],False)}<br><span style="font-size:.6rem;color:#8b949e;">{ld_str}</span></td>
+              <td style="text-align:right;font-family:monospace;color:var(--fg2);">{s["max_h"]-s["min_l"]:{fmt}}</td>
+            </tr>'''
+        return html
+
+    # 構建MA列
+    def ma_rows_html():
+        html = ''
+        cur_c = float(today_row.get('close',0) or 0)
+        cur_h = float(today_row.get('high',0) or 0)
+        cur_l = float(today_row.get('low',0) or 0)
+        for n in [5, 10, 20]:
+            s = stats[n]
+            if not s:
+                continue
+            cc = ma_color(s['ma_close'], cur_c)
+            hc = ma_color(s['ma_high'],  cur_h)
+            lc = ma_color(s['ma_low'],   cur_l)
+            html += f'''<tr>
+              <td style="font-weight:700;color:#8b949e;white-space:nowrap;">MA{n}</td>
+              <td style="text-align:right;font-family:monospace;color:{cc};">{s["ma_close"]:{fmt}}</td>
+              <td style="text-align:right;font-family:monospace;color:{hc};">{s["ma_high"]:{fmt}}</td>
+              <td style="text-align:right;font-family:monospace;color:{lc};">{s["ma_low"]:{fmt}}</td>
+            </tr>'''
+        return html
+
+    tbl_style = 'width:100%;border-collapse:collapse;font-size:.72rem;'
+    th_style  = 'padding:4px 6px;color:var(--fg3);font-weight:500;border-bottom:1px solid var(--border);'
+
+    return f'''
+<div class="col">
+  <div class="clabel">{label}・滾動統計</div>
+
+  <!-- 極值統計 -->
+  <div style="font-size:.65rem;color:#58a6ff;font-weight:700;margin-bottom:4px;padding-top:2px;">📈 5/10/20日 極值（近N日含今日）</div>
+  <table style="{tbl_style}margin-bottom:10px;">
+    <thead><tr>
+      <th style="{th_style}text-align:left;">區間</th>
+      <th style="{th_style}text-align:right;">最高點</th>
+      <th style="{th_style}text-align:right;">最低點</th>
+      <th style="{th_style}text-align:right;">區間振幅</th>
+    </tr></thead>
+    <tbody>{ext_rows_html()}</tbody>
+  </table>
+
+  <!-- 移動均值 -->
+  <div style="font-size:.65rem;color:#d29922;font-weight:700;margin-bottom:4px;">📊 5/10/20日 移動均值（MA）</div>
+  <table style="{tbl_style}margin-bottom:10px;">
+    <thead><tr>
+      <th style="{th_style}text-align:left;">均線</th>
+      <th style="{th_style}text-align:right;">收盤均</th>
+      <th style="{th_style}text-align:right;">高點均</th>
+      <th style="{th_style}text-align:right;">低點均</th>
+    </tr></thead>
+    <tbody>{ma_rows_html()}</tbody>
+  </table>
+
+  <!-- M生命線 -->
+  <div style="font-size:.65rem;color:#a371f7;font-weight:700;margin-bottom:4px;">🧬 M生命線（近5日M值平均）</div>
+  <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border-radius:6px;border-left:2px solid #a371f7;">
+    <div>
+      <div style="font-size:.63rem;color:var(--fg3);">5日M均</div>
+      <div style="font-family:monospace;font-size:1.1rem;font-weight:700;color:#a371f7;">{m5_line:{fmt}}</div>
+    </div>
+    <div style="font-size:1.3rem;color:var(--fg3);">→</div>
+    <div>
+      <div style="font-size:.63rem;color:var(--fg3);">昨收 vs M5</div>
+      <div style="font-family:monospace;font-size:1.1rem;font-weight:700;color:{m5_color};">{m5_diff_str}</div>
+    </div>
+    <div style="font-size:.65rem;color:var(--fg3);margin-left:auto;">
+      昨收 {today_c:{fmt}}<br>
+      {'昨收高於M生命線 → 偏多' if m5_diff > 0 else ('昨收低於M生命線 → 偏空' if m5_diff < 0 else '昨收等於M生命線')}
+    </div>
+  </div>
+</div>'''
+
 # ── 策略區塊 ───────────────────────────────────────────────
 def build_strategy(gates, today_c, label, is_t5f=False):
     fmt = '.2f' if is_t5f else '.0f'
@@ -685,8 +851,8 @@ def build_global_table(data_dir: Path, report_date: str) -> str:
 
 # ── 主報告建構 ─────────────────────────────────────────────
 def build_html() -> str:
-    tx_rows  = read_csv_last_n(DATA_DIR / 'TX_daily.csv',  22)
-    t5f_rows = read_csv_last_n(DATA_DIR / 'T5F_daily.csv', 22)
+    tx_rows  = read_csv_last_n(DATA_DIR / 'TX_daily.csv',  25)
+    t5f_rows = read_csv_last_n(DATA_DIR / 'T5F_daily.csv', 25)
 
     if len(tx_rows) < 2:
         return '<p>TX 資料不足</p>'
@@ -776,6 +942,14 @@ def build_html() -> str:
   <div class="twocol">
     {build_gate_table(tx_gates, tx_today, tx_prev, '台指期 TX', is_t5f=False)}
     {build_gate_table(t5f_gates, t5f_today, t5f_prev, '台灣50 T5F', is_t5f=True) if t5f_today and t5f_prev else '<div class="col"><p style="color:var(--fg3);padding:10px;">資料不足</p></div>'}
+  </div>
+</div>
+
+<div class="sec">
+  <div class="st">📉 5/10/20日 統計面板（極值 · 均值 · M生命線）</div>
+  <div class="twocol">
+    {build_stats_panel(tx_rows, '台指期 TX', is_t5f=False)}
+    {build_stats_panel(t5f_rows, '台灣50 T5F', is_t5f=True) if len(t5f_rows) >= 2 else '<div class="col"><p style="color:var(--fg3);padding:10px;">資料不足</p></div>'}
   </div>
 </div>
 
