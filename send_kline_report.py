@@ -130,7 +130,7 @@ CSS = """
   --bg:#0d1117;--bg2:#161b22;--bg3:#1c2128;--bg4:#21262d;
   --border:#30363d;--border2:#21262d;
   --fg:#e6edf3;--fg2:#c9d1d9;--fg3:#8b949e;
-  --bull:#3fb950;--bear:#f85149;--warn:#d29922;--accent:#58a6ff;
+  --bull:#f85149;--bear:#3fb950;--warn:#d29922;--accent:#58a6ff;
   color-scheme:dark;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -229,14 +229,14 @@ def build_ohlc_block(today_row, prev_row, rows_hist, label, is_t5f=False):
     # 開盤相對前日收
     open_diff = o - prev_c if prev_c else 0
     open_tag = f'+{open_diff:{fmt}} 開高 🔺' if open_diff > 0 else (f'{open_diff:{fmt}} 開低 🔻' if open_diff < 0 else '平開 ➡️')
-    open_color = '#3fb950' if open_diff > 0 else ('#f85149' if open_diff < 0 else '#8b949e')
-    open_bg = '#0d1a0d' if open_diff > 0 else ('#1f0a0a' if open_diff < 0 else '#1c2128')
+    open_color = '#f85149' if open_diff > 0 else ('#3fb950' if open_diff < 0 else '#8b949e')
+    open_bg = '#1f0a0a' if open_diff > 0 else ('#0d1a0d' if open_diff < 0 else '#1c2128')
 
     # 收盤漲跌
     chg = c - prev_c if prev_c else 0
     chg_tag = f'{chg:+{fmt}} 收漲 🔺' if chg > 0 else f'{chg:{fmt}} 收跌 🔻'
-    chg_color = '#3fb950' if chg > 0 else '#f85149'
-    close_border = '#3fb95044' if chg > 0 else '#f8514944'
+    chg_color = '#f85149' if chg > 0 else '#3fb950'
+    close_border = '#f8514944' if chg > 0 else '#3fb95044'
 
     # 今日最高與歷史高點
     all_highs = [float(r.get('high',0) or 0) for r in rows_hist]
@@ -244,15 +244,15 @@ def build_ohlc_block(today_row, prev_row, rows_hist, label, is_t5f=False):
     prev_h = float(prev_row.get('high',0) or 0) if prev_row else h
     h_diff = h - prev_h
     h_tag = f'{h_diff:+{fmt}} 高點新高 🔺' if h_diff > 0 else f'{h_diff:{fmt}} 高點新低 🔻'
-    h_color = '#3fb950' if h_diff > 0 else '#f85149'
-    h_bg = '#0d1a0d' if h_diff > 0 else '#1f0a0a'
+    h_color = '#f85149' if h_diff > 0 else '#3fb950'
+    h_bg = '#1f0a0a' if h_diff > 0 else '#0d1a0d'
 
     # 今日最低與歷史低點
     prev_l = float(prev_row.get('low',0) or 0) if prev_row else l
     l_diff = l - prev_l
     l_tag = f'{l_diff:+{fmt}} 低點新高 🔺' if l_diff > 0 else f'{l_diff:{fmt}} 低點新低 🔻'
-    l_color = '#3fb950' if l_diff > 0 else '#f85149'
-    l_bg = '#0d1a0d' if l_diff > 0 else '#1f0a0a'
+    l_color = '#f85149' if l_diff > 0 else '#3fb950'
+    l_bg = '#1f0a0a' if l_diff > 0 else '#0d1a0d'
 
     # 高點峰值日期（找最高）
     peak_date = ''
@@ -260,6 +260,96 @@ def build_ohlc_block(today_row, prev_row, rows_hist, label, is_t5f=False):
         if abs(float(r.get('high',0) or 0) - peak_h) < 0.01:
             peak_date = r.get('date','')[-5:].replace('-','/')
             break
+
+    # ── 趨勢資訊計算 ─────────────────────────────────────────
+    # 多方/空方由昨日收盤 vs 三關價判斷
+    prev_gates = calc_gates(
+        float(prev_row.get('high',0) or 0) if prev_row else h,
+        float(prev_row.get('low',0) or 0) if prev_row else l,
+        float(prev_row.get('close',0) or 0) if prev_row else c
+    ) if prev_row else calc_gates(h, l, c)
+    is_bull_trend = c >= prev_gates.get('m', c)
+
+    # 新高連續天數：從今日往回，每天的高點 >= 前一天高點
+    streak_high = 0
+    hist_sorted = list(rows_hist)  # 時序排列（舊→新）
+    if len(hist_sorted) >= 2:
+        for i in range(len(hist_sorted)-1, 0, -1):
+            cur_h = float(hist_sorted[i].get('high',0) or 0)
+            prv_h = float(hist_sorted[i-1].get('high',0) or 0)
+            if cur_h >= prv_h:
+                streak_high += 1
+            else:
+                break
+
+    # 今昨收盤差
+    close_diff = c - (float(prev_row.get('close',0) or 0) if prev_row else c)
+    close_diff_fmt = f'+{close_diff:{fmt}}' if close_diff > 0 else f'{close_diff:{fmt}}'
+    close_diff_color = '#f85149' if close_diff > 0 else ('#3fb950' if close_diff < 0 else '#8b949e')
+
+    # 前波高：往回找最後一個高點比前一天高的位置之前的最後峰值
+    # （找近期最高點，不含今日）
+    prev_peak_h = 0.0
+    prev_peak_date_str = ''
+    if len(hist_sorted) >= 2:
+        look_back = hist_sorted[:-1]  # 排除最後一筆（today）
+        for i in range(len(look_back)-1, -1, -1):
+            if i == len(look_back)-1:
+                # 最後一筆就是 prev_row high
+                prev_peak_h = float(look_back[i].get('high',0) or 0)
+                prev_peak_date_str = look_back[i].get('date','')[-5:].replace('-','/')
+                continue
+            if float(look_back[i].get('high',0) or 0) > float(look_back[i+1].get('high',0) or 0):
+                prev_peak_h = float(look_back[i].get('high',0) or 0)
+                prev_peak_date_str = look_back[i].get('date','')[-5:].replace('-','/')
+                break
+
+    # 新低連續天數
+    streak_low = 0
+    if len(hist_sorted) >= 2:
+        for i in range(len(hist_sorted)-1, 0, -1):
+            cur_l = float(hist_sorted[i].get('low',0) or 0)
+            prv_l = float(hist_sorted[i-1].get('low',0) or 0)
+            if cur_l <= prv_l:
+                streak_low += 1
+            else:
+                break
+
+    # 前波低
+    prev_trough_l = 0.0
+    prev_trough_date_str = ''
+    if len(hist_sorted) >= 2:
+        look_back = hist_sorted[:-1]
+        for i in range(len(look_back)-1, -1, -1):
+            if i == len(look_back)-1:
+                prev_trough_l = float(look_back[i].get('low',0) or 0)
+                prev_trough_date_str = look_back[i].get('date','')[-5:].replace('-','/')
+                continue
+            if float(look_back[i].get('low',0) or 0) < float(look_back[i+1].get('low',0) or 0):
+                prev_trough_l = float(look_back[i].get('low',0) or 0)
+                prev_trough_date_str = look_back[i].get('date','')[-5:].replace('-','/')
+                break
+
+    # 組裝趨勢資訊 HTML
+    if is_bull_trend:
+        if streak_high >= 1:
+            trend_line1 = f'📈 連續第 <strong style="color:#f85149;font-size:.85rem;">{streak_high}</strong> 天新高'
+        else:
+            trend_line1 = f'⚠️ 前波高點：{prev_peak_date_str} @ <strong style="color:#f85149;">{prev_peak_h:{fmt}}</strong>'
+        trend_line2 = f'今昨差：<strong style="color:{close_diff_color};">{close_diff_fmt}</strong>'
+    else:
+        if streak_low >= 1:
+            trend_line1 = f'📉 連續第 <strong style="color:#3fb950;font-size:.85rem;">{streak_low}</strong> 天新低'
+        else:
+            trend_line1 = f'⚠️ 前波低點：{prev_trough_date_str} @ <strong style="color:#3fb950;">{prev_trough_l:{fmt}}</strong>'
+        trend_line2 = f'今昨差：<strong style="color:{close_diff_color};">{close_diff_fmt}</strong>'
+        if prev_peak_h > 0:
+            trend_line1 += f'　前波高：{prev_peak_date_str} @ <span style="color:#8b949e;">{prev_peak_h:{fmt}}</span>'
+
+    trend_html = f'''
+  <div style="margin-top:6px;padding:5px 10px;background:var(--bg4);border-radius:4px;border-left:2px solid {'#f85149' if is_bull_trend else '#3fb950'};font-size:.68rem;line-height:1.8;">
+    {trend_line1}　　{trend_line2}
+  </div>'''
 
     return f'''
 <div class="col">
@@ -295,11 +385,12 @@ def build_ohlc_block(today_row, prev_row, rows_hist, label, is_t5f=False):
       <div style="font-size:.62rem;color:{l_color};font-weight:700;">{l_tag}</div>
       <div style="font-size:.59rem;color:var(--fg3);">前低 {prev_l:{fmt}}</div>
     </div>
-    <div style="flex:1;min-width:70px;background:{'#0d1a0d' if chg>=0 else '#1f0a0a'};border-radius:0 0 6px 6px;padding:4px 10px 6px;text-align:center;border:1px solid {'#3fb95022' if chg>=0 else '#f8514922'};border-top:none;">
+    <div style="flex:1;min-width:70px;background:{'#1f0a0a' if chg>=0 else '#0d1a0d'};border-radius:0 0 6px 6px;padding:4px 10px 6px;text-align:center;border:1px solid {'#f8514922' if chg>=0 else '#3fb95022'};border-top:none;">
       <div style="font-size:.62rem;color:{chg_color};font-weight:700;">{chg_tag}</div>
       <div style="font-size:.59rem;color:var(--fg3);">vs 前日收 {prev_c:{fmt}}</div>
     </div>
   </div>
+  {trend_html}
 </div>'''
 
 # ── 振幅區塊 ───────────────────────────────────────────────
@@ -425,7 +516,7 @@ def build_gate_table(gates, today_row, prev_row, label, is_t5f=False):
         </tr>'''
 
     rows_html  = row('row-b3', 'B3',    'lb-gate', '今日關卡', gates['b3'], gates['b3']-c, '強多上限')
-    rows_html += row('row-b2', 'B2',    'lb-gate', '今日關卡', gates['b2'], gates['b2']-c, '多方確認', '#3fb950')
+    rows_html += row('row-b2', 'B2',    'lb-gate', '今日關卡', gates['b2'], gates['b2']-c, '多方確認', '#f85149')
     rows_html += row('row-b1', 'B1',    'lb-gate', '今日關卡', gates['b1'], gates['b1']-c, '主要壓力', '#58a6ff', '#d29922')
     if prev_h > 0:
         rows_html += row('row-dh', '昨日高', 'lb-day',  '昨日盤',  prev_h,     prev_h-c,   '昨日高點', '#79c0ff')
@@ -433,22 +524,22 @@ def build_gate_table(gates, today_row, prev_row, label, is_t5f=False):
     rows_html += f'''<tr class="row-dc">
       <td class="gk">昨日收★</td>
       <td><span class="lb lb-cur">★昨收</span></td>
-      <td class="gv" style="color:#f85149;">{c:{fmt}}</td>
+      <td class="gv" style="color:#58a6ff;">{c:{fmt}}</td>
       <td class="gd">—</td>
-      <td class="gd" style="color:#f85149;">{zone}</td>
+      <td class="gd" style="color:#58a6ff;">{zone}</td>
     </tr>'''
     if prev_l > 0:
         rows_html += row('row-dl', '昨日低', 'lb-day',  '昨日盤',  prev_l,     prev_l-c,   '昨日低點', '#79c0ff')
     rows_html += row('row-s1', 'S1',    'lb-gate', '今日關卡', gates['s1'], gates['s1']-c, '第一支撐')
-    rows_html += row('row-s2', 'S2 ⬅', 'lb-gate', '今日關卡', gates['s2'], gates['s2']-c, '超賣警示', '#f85149', '#f85149')
-    rows_html += row('row-s3', 'S3',    'lb-gate', '今日關卡', gates['s3'], gates['s3']-c, '深空支撐', '#f85149')
+    rows_html += row('row-s2', 'S2 ⬅', 'lb-gate', '今日關卡', gates['s2'], gates['s2']-c, '超賣警示', '#3fb950', '#3fb950')
+    rows_html += row('row-s3', 'S3',    'lb-gate', '今日關卡', gates['s3'], gates['s3']-c, '深空支撐', '#3fb950')
 
     warn_msg = f'⚠️ 昨收 {c:{fmt}} 位於 S2（{gates["s2"]:{fmt}}）以下——空方恐慌格局' if is_panic else \
                f'✅ 昨收 {c:{fmt}} 位於 M（{gates["m"]:{fmt}}）以上——多方偏向' if c >= gates['m'] else \
                f'⚠️ 昨收 {c:{fmt}} 位於 S2~M 空方區間，需守 S1（{gates["s1"]:{fmt}}）'
 
     warn_bg = '#1f0a0a' if is_panic else ('#0d1e0f' if c >= gates['m'] else '#2d1a00')
-    warn_color = '#f85149' if is_panic else ('#3fb950' if c >= gates['m'] else '#f0883e')
+    warn_color = '#3fb950' if is_panic else ('#f85149' if c >= gates['m'] else '#f0883e')
 
     badge_html = f'<span class="wb wb-strong" style="margin-left:4px;">{badge_color}</span>' if badge_color else ''
 
@@ -560,7 +651,7 @@ def build_global_table(data_dir: Path, report_date: str) -> str:
 
         chg_pct = (c - prev_c) / prev_c * 100 if prev_c else 0
         chg_cls = 'pos' if chg_pct > 0 else ('neg' if chg_pct < 0 else 'neu')
-        dir_color = 'var(--bull)' if is_bull_dir else '#f85149'
+        dir_color = 'var(--bull)' if is_bull_dir else '#3fb950'
 
         note_td = f' {note}' if note else ''
         dir_display = direction + note_td
@@ -590,57 +681,7 @@ def build_global_table(data_dir: Path, report_date: str) -> str:
 </div>'''
 
 # ── 老師叮嚀 ───────────────────────────────────────────────
-def build_ding(tx_gates, tx_c, tx_rng, avg20_tx, t5f_gates, t5f_c):
-    fmt_tx  = '.0f'
-    fmt_t5f = '.2f'
-    tx_zone, _  = zone_label(tx_c, tx_gates)
-    t5f_zone, _ = zone_label(t5f_c, t5f_gates)
-
-    # 勝算評估
-    if tx_c < tx_gates['s2']:
-        odds = '偏空 7 成 / 偏多 3 成'
-        odds_color = '#f85149'
-        odds_bg = '#1f0a0a'
-        main_msg = 'S2以下恐慌區，主軸順空觀望，彈至 M 再看反應動態調整。'
-    elif tx_c >= tx_gates['b2']:
-        odds = '偏多 7 成 / 偏空 3 成'
-        odds_color = '#3fb950'
-        odds_bg = '#0d1e0f'
-        main_msg = 'B2以上強多格局，主軸做多，注意假突破風險。'
-    elif tx_c >= tx_gates['m']:
-        odds = '偏多 6 成 / 偏空 4 成'
-        odds_color = '#d29922'
-        odds_bg = '#2d2100'
-        main_msg = 'M以上偏多，守 M 做多，等 B1/B2 確認。'
-    else:
-        odds = '多空各半，震盪觀望'
-        odds_color = '#8b949e'
-        odds_bg = '#1c2128'
-        main_msg = 'S2~M 震盪區，等方向明確再出手。'
-
-    range_ratio = tx_rng / avg20_tx * 100 if avg20_tx > 0 else 100
-    range_comment = f'今日 TX 振幅 {tx_rng:{fmt_tx}} 點，為 20 日均幅的 {range_ratio:.0f}%。' + \
-                    ('量縮跌 S2 是「低能量的空方延伸」，不是恐慌崩潰量，持續觀察量能。' if range_ratio < 80 else
-                     '放量大波動，注意方向確認後的延續性。' if range_ratio > 120 else
-                     '振幅正常，盤面無特殊訊號。')
-
-    ma02_msg = ('S2 以下操作原則：空方主戰場在 S2~M，彈到 M（' + f'{tx_gates["m"]:{fmt_tx}}' + '）是觀察點而非進多點。') \
-               if tx_c < tx_gates['s2'] else \
-               ('M 以上操作原則：多方有慣性，持倉做多，逢回測 M 附近加碼。')
-
-    return f'''
-<div class="sec">
-  <div class="st">🎓 老師叮嚀</div>
-  <div class="ding">
-    <p><strong>D-01（動態調整核心）</strong>　TX {tx_zone}，T5F {t5f_zone}。結構訊號需搭配盤中量能動態修正，靜態關卡只是框架。</p>
-    <p><strong>MA-02（漲跌不對稱）</strong>　{ma02_msg}</p>
-    <p><strong>V-03（量能判讀）</strong>　{range_comment}</p>
-    <p><strong>KN-03（全球聯動）</strong>　請參考上方全球18商品表格，確認 TX 方向與美股、亞洲市場的共振程度。台股若要方向確認，需美股同步配合。</p>
-    <p style="color:{odds_color};font-size:.75rem;margin-top:6px;padding:6px 8px;background:{odds_bg};border-radius:4px;border-left:3px solid {odds_color};">
-      ⚠️ 今日勝算評估：<strong>{odds}</strong>。{main_msg}最終決策權在您自己。
-    </p>
-  </div>
-</div>'''
+# build_ding removed — no brand
 
 # ── 主報告建構 ─────────────────────────────────────────────
 def build_html() -> str:
@@ -710,8 +751,7 @@ def build_html() -> str:
   </div>
   <div class="hmeta">
     資料日 {report_date}<br>
-    報告日 {report_day_str}<br>
-    蘭老師AI分身
+    報告日 {report_day_str}
   </div>
 </div>
 
@@ -749,11 +789,10 @@ def build_html() -> str:
 
 {build_global_table(DATA_DIR, report_date)}
 
-{build_ding(tx_gates, tx_c, tx_rng, avg20_tx, t5f_gates, t5f_c)}
 
 <div class="footer">
   三關價日報・依 {report_date} 收盤計算・{report_day_str} 有效<br>
-  蘭老師AI分身・群益金鼎証券 中山分公司・僅供參考，投資決策請自行判斷
+  僅供參考，投資決策請自行判斷
 </div>
 
 </div>
