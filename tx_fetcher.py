@@ -1,40 +1,17 @@
 """
-tx_fetcher.py  v7
+tx_fetcher.py  v8
 台指期（TX）資料自動抓取模組
 來源：台灣期貨交易所（taifex.com.tw）
-合併日盤＋夜盤：Open=日盤O, High=max(日H,夜H), Low=min(日L,夜L), Close=夜盤C
 
-v5 修正重點（結算日換月問題）：
-    每月第3個星期三是TX結算日，當天近月合約會在早盤結算後停止交易，
-    成交量主力轉移到新的近月合約。若日盤、夜盤「各自」抓成交量最大的
-    TX列，結算日當天可能日盤抓到舊合約、夜盤抓到新合約，開高低收會
-    變成兩個不同合約拼起來，數字對不起來。
-    v5 做法：日盤、夜盤都先抓「所有到期月份」的資料，再用「當天日盤+
-    夜盤合計成交量最大」的那個月份為準，日盤、夜盤都固定抓同一個月份
-    的資料，避免結算日拼錯合約。
-
-v6 修正重點（夜盤查詢日期差一天的問題）：
-    實測發現台期所網站「查詢日期」填某一天時，夜盤（盤後交易時段）
-    給的其實是「前一天15:00～當天05:00」的資料，也就是查詢日期是用
-    「夜盤結束那天」，不是「夜盤開始那天」。
-    範例：查詢日期填 2026/09/16、盤別選夜盤，網站回傳的表頭寫的是
-    「2026/09/15 15:00~次日05:00」，代表抓到的是9/15晚上的夜盤，不是
-    9/16晚上的。
-    v6 做法：抓「某一天」的資料時，日盤照樣查當天日期；夜盤要查「隔
-    一天」的日期，才會抓到「當天晚上」真正的夜盤，避免日盤、夜盤其實
-    差了一天卻被拼在一起。
-
-v7 修正重點（日盤未開盤時不寫入資料）：
-    workflow 在台灣時間 07:xx 執行，此時當天日盤尚未開盤（08:45才開）。
-    若日盤無資料，代表今天還沒開盤，不應寫入今天的資料，避免把昨晚
-    夜盤誤當今天全日資料存入 CSV。
-    v7 做法：日盤無資料時直接 return None，跳過今天，等隔天 backfill
-    補回正確的完整資料。
+v8 修正重點（日盤/夜盤欄位分開儲存）：
+    CSV 新增 day_open/day_high/day_low/day_close/day_volume
+    及 night_open/night_high/night_low/night_close/night_volume。
+    --backfill-split 模式：對已有全日資料的歷史列重新抓日/夜拆分，
+    只補欄位不覆蓋全日 OHLC。
 
 台期所欄位順序（已確認）：
 [0]=契約 [1]=到期月份 [2]=開盤價 [3]=最高價 [4]=最低價 [5]=最後成交價
 [6]=漲跌值 [7]=漲跌% [8]=*成交量 [9]=結算價 [10]=*未沖銷契約量
-[11]=最後最佳買價 [12]=最後最佳賣價 [13]=歷史最高 [14]=歷史最低
 """
 
 import requests
@@ -61,6 +38,13 @@ HEADERS = {
 PRICE_MIN = 5000
 PRICE_MAX = 100000
 
+CSV_COLS = [
+    "date",
+    "open", "high", "low", "close", "volume",
+    "day_open", "day_high", "day_low", "day_close", "day_volume",
+    "night_open", "night_high", "night_low", "night_close", "night_volume",
+]
+
 
 def to_float(s):
     try:
@@ -81,12 +65,6 @@ def is_trading_day(date: datetime) -> bool:
 
 
 def fetch_session_all(date: datetime, market_code: str) -> dict:
-    """
-    抓取指定日期、時段「所有到期月份」的 TX 合約 OHLC。
-    回傳 {到期月份字串: {open,high,low,close,volume}}。
-    上層再依「當天日盤+夜盤合計成交量最大」的月份統一取用，
-    避免結算日（每月第3個星期三）換月時日盤/夜盤各抓到不同合約。
-    """
     date_str = date.strftime("%Y/%m/%d")
     params = {
         "queryType":    "1",
@@ -108,54 +86,43 @@ def fetch_session_all(date: datetime, market_code: str) -> dict:
     for table in soup.find_all("table"):
         for row in table.find_all("tr"):
             cells = [c.get_text(strip=True) for c in row.find_all(["td", "th"])]
-
-            # 第一欄必須是 TX
             if len(cells) < 9 or cells[0] != "TX":
                 continue
-
             month = cells[1].strip()
             o   = to_float(cells[2])
             h   = to_float(cells[3])
             l   = to_float(cells[4])
             c   = to_float(cells[5])
             vol = to_int(cells[8])
-
-            # 驗證價格合理
             if not all([o, h, l, c]):
                 continue
-            if not (PRICE_MIN < o < PRICE_MAX and
-                    PRICE_MIN < h < PRICE_MAX and
-                    PRICE_MIN < l < PRICE_MAX and
-                    PRICE_MIN < c < PRICE_MAX):
+            if not (PRICE_MIN < o < PRICE_MAX and PRICE_MIN < h < PRICE_MAX and
+                    PRICE_MIN < l < PRICE_MAX and PRICE_MIN < c < PRICE_MAX):
                 continue
             if h < l or h < o or h < c:
                 continue
-
             if month not in results or vol > results[month]["volume"]:
                 results[month] = {"open": o, "high": h, "low": l, "close": c, "volume": vol}
 
     return results
 
 
-def fetch_tx_daily(date: datetime) -> dict | None:
+def fetch_tx_daily(date: datetime):
     if not is_trading_day(date):
         print(f"[SKIP] {date.strftime('%Y-%m-%d')} 非交易日")
         return None
 
-    day_rows   = fetch_session_all(date, "0")                        # 日盤，查當天，所有月份
-    night_rows = fetch_session_all(date + timedelta(days=1), "1")   # 夜盤，要查「隔一天」的日期，才是當天晚上的盤，所有月份
+    day_rows   = fetch_session_all(date, "0")
+    night_rows = fetch_session_all(date + timedelta(days=1), "1")
 
     if not day_rows and not night_rows:
         print(f"[MISS] {date.strftime('%Y-%m-%d')} 無資料（可能休市）")
         return None
 
-    # v7：日盤無資料 = 今天還沒開盤，不寫入，避免把夜盤誤當全日資料
     if not day_rows:
         print(f"[SKIP] {date.strftime('%Y-%m-%d')} 日盤無資料，尚未開盤，跳過")
         return None
 
-    # 以「日盤+夜盤合計成交量最大」的月份為準，日盤、夜盤都固定取該月份
-    # （結算日換月時，避免日盤抓到舊合約、夜盤抓到新合約造成拼接錯誤）
     months = set(day_rows) | set(night_rows)
     combined_vol = {
         m: day_rows.get(m, {}).get("volume", 0) + night_rows.get(m, {}).get("volume", 0)
@@ -173,31 +140,70 @@ def fetch_tx_daily(date: datetime) -> dict | None:
             "low":    min(day["low"],   night["low"]),
             "close":  night["close"],
             "volume": day["volume"] + night["volume"],
+            "day_open":   day["open"],
+            "day_high":   day["high"],
+            "day_low":    day["low"],
+            "day_close":  day["close"],
+            "day_volume": day["volume"],
+            "night_open":   night["open"],
+            "night_high":   night["high"],
+            "night_low":    night["low"],
+            "night_close":  night["close"],
+            "night_volume": night["volume"],
         }
         tag = f"日+夜 契約{target}"
     elif night:
-        result = {**night}
+        result = {
+            "open": night["open"], "high": night["high"],
+            "low": night["low"], "close": night["close"], "volume": night["volume"],
+            "day_open": "", "day_high": "", "day_low": "", "day_close": "", "day_volume": "",
+            "night_open":   night["open"], "night_high":   night["high"],
+            "night_low":    night["low"],  "night_close":  night["close"],
+            "night_volume": night["volume"],
+        }
         tag = f"夜 契約{target}"
     else:
-        result = {**day}
+        result = {
+            "open": day["open"], "high": day["high"],
+            "low": day["low"], "close": day["close"], "volume": day["volume"],
+            "day_open":   day["open"], "day_high":   day["high"],
+            "day_low":    day["low"],  "day_close":  day["close"],
+            "day_volume": day["volume"],
+            "night_open": "", "night_high": "", "night_low": "", "night_close": "", "night_volume": "",
+        }
         tag = f"日 契約{target}"
 
     result["date"] = date.strftime("%Y-%m-%d")
+    dh = result.get('day_high')
+    dl = result.get('day_low')
+    nh = result.get('night_high')
+    nl = result.get('night_low')
+    extra = ""
+    if dh and nh:
+        extra = f" | 日H={dh:.0f} L={dl:.0f} | 夜H={nh:.0f} L={nl:.0f}"
     print(f"[OK] {result['date']} TX({tag}) "
           f"O={result['open']:.0f} H={result['high']:.0f} "
           f"L={result['low']:.0f}  C={result['close']:.0f} "
-          f"Vol={result['volume']}")
+          f"Vol={result['volume']}{extra}")
     return result
 
 
 def load_daily() -> pd.DataFrame:
     if os.path.exists(DAILY_CSV):
-        return pd.read_csv(DAILY_CSV, parse_dates=["date"])
-    return pd.DataFrame(columns=["date","open","high","low","close","volume"])
+        df = pd.read_csv(DAILY_CSV, parse_dates=["date"])
+        for col in CSV_COLS:
+            if col not in df.columns:
+                df[col] = ""
+        return df
+    return pd.DataFrame(columns=CSV_COLS)
 
 
 def save_daily(df: pd.DataFrame):
     df = df.sort_values("date").reset_index(drop=True)
+    for col in CSV_COLS:
+        if col not in df.columns:
+            df[col] = ""
+    df = df[CSV_COLS]
     df.to_csv(DAILY_CSV, index=False, date_format="%Y-%m-%d")
     print(f"[SAVED] 日線 CSV：{DAILY_CSV}（共 {len(df)} 筆）")
 
@@ -208,7 +214,6 @@ def upsert(rows) -> pd.DataFrame:
     df = load_daily()
     new = pd.DataFrame(rows)
     new["date"] = pd.to_datetime(new["date"])
-    # 過濾掉舊版錯誤資料（high 重複出現的異常值）
     df = df[df["close"] > PRICE_MIN]
     df = df[~df["date"].isin(new["date"])]
     df = pd.concat([df, new], ignore_index=True)
@@ -216,10 +221,33 @@ def upsert(rows) -> pd.DataFrame:
     return df
 
 
+def upsert_split_only(rows) -> pd.DataFrame:
+    if isinstance(rows, dict):
+        rows = [rows]
+    df = load_daily()
+    new = pd.DataFrame(rows)
+    new["date"] = pd.to_datetime(new["date"])
+
+    split_cols = ["day_open","day_high","day_low","day_close","day_volume",
+                  "night_open","night_high","night_low","night_close","night_volume"]
+
+    for _, nr in new.iterrows():
+        mask = df["date"] == nr["date"]
+        if mask.any():
+            for col in split_cols:
+                if col in nr and str(nr[col]) != "":
+                    df.loc[mask, col] = nr[col]
+        else:
+            df = pd.concat([df, pd.DataFrame([nr])], ignore_index=True)
+
+    save_daily(df)
+    return df
+
+
 def build_weekly(df_daily: pd.DataFrame):
     df = df_daily.copy()
     df["date"] = pd.to_datetime(df["date"])
-    df = df[df["close"] > PRICE_MIN]   # 過濾舊版錯誤資料
+    df = df[df["close"] > PRICE_MIN]
     df = df.sort_values("date").set_index("date")
 
     weekly = df.resample("W-FRI").agg(
@@ -249,15 +277,40 @@ def backfill(days: int = 90):
     print(f"[DONE] 共抓到 {len(rows)} 筆")
 
 
+def backfill_split(start_date: str, end_date: str = None):
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end   = datetime.strptime(end_date, "%Y-%m-%d") if end_date else datetime.today()
+    print(f"[BACKFILL-SPLIT] {start.strftime('%Y-%m-%d')} ~ {end.strftime('%Y-%m-%d')} 補拆分欄位...")
+    rows = []
+    cur = start
+    while cur <= end:
+        if is_trading_day(cur):
+            row = fetch_tx_daily(cur)
+            if row:
+                rows.append(row)
+            time.sleep(0.8)
+        cur += timedelta(days=1)
+    if rows:
+        upsert_split_only(rows)
+        print(f"[DONE] 共補 {len(rows)} 筆拆分資料")
+    else:
+        print("[DONE] 無資料補入")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--date",     type=str, default=None)
-    parser.add_argument("--weekly",   action="store_true")
-    parser.add_argument("--backfill", type=int, default=0)
+    parser.add_argument("--date",           type=str, default=None)
+    parser.add_argument("--weekly",         action="store_true")
+    parser.add_argument("--backfill",       type=int, default=0)
+    parser.add_argument("--backfill-split", type=str, default=None,
+                        metavar="START_DATE")
+    parser.add_argument("--split-end",      type=str, default=None)
     args = parser.parse_args()
 
     if args.backfill > 0:
         backfill(args.backfill)
+    elif args.backfill_split:
+        backfill_split(args.backfill_split, args.split_end)
     else:
         target = datetime.strptime(args.date, "%Y-%m-%d") if args.date else datetime.today()
         row = fetch_tx_daily(target)
@@ -268,6 +321,5 @@ if __name__ == "__main__":
         else:
             print("[WARN] 無資料，結束")
             exit(0)
-
         if args.weekly or target.weekday() == 4:
             build_weekly(df)
