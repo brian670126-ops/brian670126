@@ -1,0 +1,970 @@
+<!doctype html>
+<title>台股趨勢延續看板</title>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --bg: #f6f4ef;
+  --surface: #ffffff;
+  --surface-2: #f0ede6;
+  --ink: #17181a;
+  --ink-muted: #5c5f63;
+  --ink-faint: #8a8d90;
+  --border: rgba(23,24,26,0.10);
+  --border-strong: rgba(23,24,26,0.18);
+  --accent: #1f3d52;
+  --accent-ink: #ffffff;
+  --accent-soft: #e7ecf0;
+
+  --up-weak: #f0b3ac;
+  --up-mid: #d24c3d;
+  --up-strong: #932218;
+  --up-weak-bg: #fbeae7;
+  --up-mid-bg: #f8ded9;
+  --up-strong-bg: #f4cec7;
+
+  --down-weak: #a9d1ac;
+  --down-mid: #3f8f4d;
+  --down-strong: #1e5c2b;
+  --down-weak-bg: #e6f2e5;
+  --down-mid-bg: #dcedda;
+  --down-strong-bg: #cfe4cd;
+
+  --flat: #83878c;
+  --flat-bg: #eceae5;
+
+  --shadow: 0 1px 2px rgba(23,24,26,0.06), 0 8px 24px rgba(23,24,26,0.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #121316;
+    --surface: #1b1d21;
+    --surface-2: #202226;
+    --ink: #f0f1f2;
+    --ink-muted: #a6a9ad;
+    --ink-faint: #797d82;
+    --border: rgba(255,255,255,0.09);
+    --border-strong: rgba(255,255,255,0.16);
+    --accent: #86aecb;
+    --accent-ink: #0e1720;
+    --accent-soft: #22303b;
+
+    --up-weak: #7e3d37;
+    --up-mid: #c8564a;
+    --up-strong: #ef8578;
+    --up-weak-bg: #2c1c1b;
+    --up-mid-bg: #3a211f;
+    --up-strong-bg: #4a2521;
+
+    --down-weak: #3c5f42;
+    --down-mid: #4f9c5c;
+    --down-strong: #7ed98d;
+    --down-weak-bg: #1a2620;
+    --down-mid-bg: #1e2f22;
+    --down-strong-bg: #223a26;
+
+    --flat: #9298a0;
+    --flat-bg: #24262a;
+
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #121316;
+  --surface: #1b1d21;
+  --surface-2: #202226;
+  --ink: #f0f1f2;
+  --ink-muted: #a6a9ad;
+  --ink-faint: #797d82;
+  --border: rgba(255,255,255,0.09);
+  --border-strong: rgba(255,255,255,0.16);
+  --accent: #86aecb;
+  --accent-ink: #0e1720;
+  --accent-soft: #22303b;
+
+  --up-weak: #7e3d37;
+  --up-mid: #c8564a;
+  --up-strong: #ef8578;
+  --up-weak-bg: #2c1c1b;
+  --up-mid-bg: #3a211f;
+  --up-strong-bg: #4a2521;
+
+  --down-weak: #3c5f42;
+  --down-mid: #4f9c5c;
+  --down-strong: #7ed98d;
+  --down-weak-bg: #1a2620;
+  --down-mid-bg: #1e2f22;
+  --down-strong-bg: #223a26;
+
+  --flat: #9298a0;
+  --flat-bg: #24262a;
+
+  --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 8px 24px rgba(0,0,0,0.35);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Noto Sans TC", system-ui, -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.mono {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-variant-numeric: tabular-nums;
+}
+.wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+}
+
+/* ---- header ---- */
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 24px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 22px;
+}
+.title-block h1 {
+  font-size: 22px;
+  font-weight: 900;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.title-block p {
+  margin: 0;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.header-meta {
+  text-align: right;
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.6;
+}
+.header-meta .date {
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 600;
+}
+.header-meta .date .mono { font-weight: 600; }
+
+/* ---- stat tiles ---- */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.stat::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--stripe, var(--flat));
+}
+.stat.up { --stripe: var(--up-mid); }
+.stat.flat { --stripe: var(--flat); }
+.stat.down { --stripe: var(--down-mid); }
+.stat .num {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: "IBM Plex Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.stat .lbl {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+.stat.up .num { color: var(--up-mid); }
+.stat.down .num { color: var(--down-mid); }
+
+/* ---- controls ---- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.controls input[type="search"] {
+  flex: 1 1 200px;
+  min-width: 160px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13.5px;
+  font-family: inherit;
+}
+.controls select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-family: inherit;
+}
+.controls input::placeholder { color: var(--ink-faint); }
+.controls input:focus, .controls select:focus, .chip:focus-visible, th button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--ink-muted);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+.chip .dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--dotcolor, var(--ink-faint));
+  flex: none;
+}
+.chip[aria-pressed="true"] {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+  font-weight: 600;
+}
+.result-count {
+  font-size: 12px;
+  color: var(--ink-faint);
+  margin: 2px 2px 10px;
+}
+
+/* ---- table ---- */
+.table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 880px;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+  z-index: 1;
+  text-align: left;
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+thead th button {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: inherit;
+  color: inherit;
+}
+thead th button .arrow { opacity: 0; font-size: 10px; }
+thead th button[aria-sort]:not([aria-sort="none"]) .arrow,
+thead th button:hover .arrow { opacity: 1; }
+tbody td {
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13.5px;
+  vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-2); }
+td.num-col { text-align: right; }
+.ticker-cell .code { font-weight: 600; font-size: 13px; }
+.ticker-cell .industry { color: var(--ink-faint); font-size: 11.5px; margin-top: 1px; }
+.name-cell .company { font-weight: 500; }
+
+/* diverging bar */
+.bar-cell { width: 168px; }
+.bar-track {
+  position: relative;
+  height: 18px;
+  background: var(--surface-2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-track .mid {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--border-strong);
+}
+.bar-fill {
+  position: absolute;
+  top: 2px; bottom: 2px;
+  border-radius: 3px;
+  background: var(--barcolor, var(--flat));
+}
+.score-num {
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 42px;
+  display: inline-block;
+  text-align: right;
+}
+
+/* badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--badgebg, var(--flat-bg));
+  color: var(--badgefg, var(--flat));
+}
+
+/* confidence */
+.conf-cell { max-width: 260px; }
+.conf-main { font-size: 12.5px; color: var(--ink-muted); }
+.conf-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+.top-contrib { font-size: 12.5px; color: var(--ink-muted); }
+
+.empty-row td {
+  text-align: center;
+  padding: 40px 12px;
+  color: var(--ink-faint);
+  font-size: 13px;
+}
+
+/* legend */
+.legend {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.legend .group { display: flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 12px; height: 12px; border-radius: 3px; }
+.legend-title { font-weight: 600; color: var(--ink-faint); }
+
+footer {
+  margin-top: 26px;
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+footer a { color: inherit; }
+
+
+/* ---- narrative summary ---- */
+.narrative {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+.narrative p {
+  margin: 0 0 8px;
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+.narrative p:last-child { margin-bottom: 0; }
+.narrative .hl-up { color: var(--up-mid); font-weight: 700; }
+.narrative .hl-down { color: var(--down-mid); font-weight: 700; }
+
+/* ---- industry aggregate chart ---- */
+.industry-chart-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.section-heading {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-faint);
+  margin: 0 0 4px;
+}
+.section-sub {
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  margin: 0 0 12px;
+}
+.ind-row {
+  display: grid;
+  grid-template-columns: 168px 1fr 68px;
+  align-items: center;
+  gap: 10px;
+  padding: 2.5px 0;
+}
+.ind-row .ind-name {
+  font-size: 12px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ind-row .ind-track {
+  position: relative;
+  height: 11px;
+  background: var(--surface-2);
+  border-radius: 3px;
+}
+.ind-row .ind-track .mid {
+  position: absolute; left: 50%; top: 0; bottom: 0;
+  width: 1px; background: var(--border-strong);
+}
+.ind-row .ind-fill {
+  position: absolute;
+  top: 1px; bottom: 1px;
+  border-radius: 2px;
+}
+.ind-row .ind-val {
+  font-size: 11px;
+  text-align: right;
+  white-space: nowrap;
+}
+.ind-row .ind-n {
+  color: var(--ink-faint);
+  margin-left: 3px;
+}
+
+/* ---- 均線二次確認名單 ---- */
+.picks-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px 18px;
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.picks-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 10px;
+}
+.picks-col-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.picks-col-title.up { color: var(--up-mid); }
+.picks-col-title.down { color: var(--down-mid); }
+.pick-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  margin-bottom: 5px;
+  font-size: 13px;
+}
+.pick-item.up { background: var(--up-strong-bg); }
+.pick-item.down { background: var(--down-strong-bg); }
+.pick-item .pick-name { font-weight: 600; }
+.pick-item .pick-code { color: var(--ink-faint); font-size: 11.5px; margin-left: 4px; }
+.pick-item .pick-ma { color: var(--ink-faint); font-size: 11px; display: block; margin-top: 1px; }
+.pick-item .pick-score {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.pick-item.up .pick-score { color: var(--up-strong); }
+.pick-item.down .pick-score { color: var(--down-strong); }
+.picks-empty { color: var(--ink-faint); font-size: 12.5px; padding: 8px 2px; }
+
+@media (max-width: 640px) {
+  .stats { grid-template-columns: 1fr; }
+  .wrap { padding: 20px 14px 48px; }
+  .picks-grid { grid-template-columns: 1fr; }
+}
+</style>
+
+<div class="wrap">
+
+  <header>
+    <div class="title-block">
+      <h1>台股趨勢延續看板</h1>
+      <p>產業關聯量化追蹤・97 檔目標股・每個交易日台灣時間 07:30 自動更新</p>
+    </div>
+    <div class="header-meta">
+      <div class="date">今日資料日期：<span class="mono" id="report-date">—</span></div>
+      <div>依「趨勢延續分數」排序・點欄名可改排序</div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat up">
+      <div>
+        <div class="num" id="stat-up">–</div>
+        <div class="lbl">偏多延續<br>（分數 &gt; 10）</div>
+      </div>
+    </div>
+    <div class="stat flat">
+      <div>
+        <div class="num" id="stat-flat">–</div>
+        <div class="lbl">方向不明／觀望<br>（-10 ~ 10）</div>
+      </div>
+    </div>
+    <div class="stat down">
+      <div>
+        <div class="num" id="stat-down">–</div>
+        <div class="lbl">偏空延續<br>（分數 &lt; -10）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="narrative" id="narrative"></div>
+
+  <div class="picks-wrap">
+    <div class="section-heading">均線二次確認 — 今日名單</div>
+    <div class="section-sub">只套用在最極端的「強烈偏多／強烈偏空」訊號：用目標股自己的 5日／20日均線做事後確認，分數再強，均線沒轉向就不列入下面名單（詳見頁尾說明）</div>
+    <div class="picks-grid">
+      <div>
+        <div class="picks-col-title up">推薦買進（<span id="picks-up-count">0</span>）</div>
+        <div id="picks-up-list"></div>
+      </div>
+      <div>
+        <div class="picks-col-title down">留意／警示（<span id="picks-down-count">0</span>）</div>
+        <div id="picks-down-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="industry-chart-wrap">
+    <div class="section-heading">產業別平均趨勢分數</div>
+    <div class="section-sub">同一個「編號」分類下所有目標股的分數平均，由高到低排序；n 是該產業納入平均的檔數</div>
+    <div id="industry-chart"></div>
+  </div>
+
+  <div class="controls">
+    <input type="search" id="search" placeholder="搜尋股票代號、公司名稱或產業…">
+    <select id="industry-filter">
+      <option value="">全部產業</option>
+    </select>
+    <div class="chips" id="label-chips" role="group" aria-label="依標籤篩選"></div>
+  </div>
+  <div class="result-count" id="result-count"></div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:34px">#</th>
+          <th data-key="ticker">股票<button data-key="ticker"><span>股票／產業</span><span class="arrow">▾</span></button></th>
+          <th data-key="score100" style="width:184px"><button data-key="score100"><span>趨勢延續分數</span><span class="arrow">▾</span></button></th>
+          <th data-key="label"><button data-key="label"><span>標籤</span><span class="arrow">▾</span></button></th>
+          <th>均線確認</th>
+          <th data-key="confidence">信心說明</th>
+          <th data-key="top">主要貢獻</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <div class="legend">
+    <span class="legend-title">分數級距（台股慣例：紅漲・綠跌）</span>
+    <span class="group"><span class="swatch" style="background:var(--up-strong)"></span>強烈偏多 (70~100)</span>
+    <span class="group"><span class="swatch" style="background:var(--up-mid)"></span>中度偏多 (40~70)</span>
+    <span class="group"><span class="swatch" style="background:var(--up-weak)"></span>弱偏多 (10~40)</span>
+    <span class="group"><span class="swatch" style="background:var(--flat)"></span>方向不明 (-10~10)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-weak)"></span>弱偏空 (-40~-10)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-mid)"></span>中度偏空 (-70~-40)</span>
+    <span class="group"><span class="swatch" style="background:var(--down-strong)"></span>強烈偏空 (-100~-70)</span>
+  </div>
+
+  <footer>
+    分數為「趨勢延續分數」（-100~+100），依產業關聯股當日同向表現加權計算，僅供輔助參考，非投資建議；樣本數不足 30 天的關聯股不計入權重。信心說明包含兩件事：納入的關聯股檔數，以及這些關聯股各自的天數樣本是否充足。「均線確認」只對強烈偏多／強烈偏空這兩端做二次確認：用目標股自己的收盤價，看 5日均線是否高於（或低於）20日均線、以及收盤是否站上（或跌破）5日均線，兩者都同方向才會列入「推薦買進」或「留意／警示」名單；只有分數極端、但均線還沒跟上的標的，會顯示「訊號未過濾」，代表暫不建議只憑這個分數行動。
+  </footer>
+</div>
+
+<script>
+const DATA = [{"ticker": "3661.TW", "name": "世芯-KY", "industry": "AI ASIC", "score100": 74.9, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 274 天（樣本充足（>200，具統計意義））", "top": "穎崴", "close": 3815.0, "ma5": 3691.0, "ma20": 3857.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3443.TW", "name": "創意", "industry": "AI ASIC", "score100": 75.3, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "力旺", "close": 7965.0, "ma5": 7957.0, "ma20": 8014.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3035.TW", "name": "智原", "industry": "AI ASIC", "score100": 66.5, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 266 天（樣本充足（>200，具統計意義））", "top": "M31", "close": 210.5, "ma5": 199.4, "ma20": 203.4, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "8227.TW", "name": "巨有科技", "industry": "AI ASIC", "score100": 79.8, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 267 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 258.5, "ma5": 276.2, "ma20": 316.45, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "7707.TW", "name": "益芯科", "industry": "AI ASIC", "score100": 76.9, "label": "強烈偏多延續", "confidence": "納入 16 檔關聯股；其中天數樣本最少的一檔為 261 天（樣本充足（>200，具統計意義））", "top": "", "close": 120.0, "ma5": 125.9, "ma20": 130.03, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "7796.TW", "name": "擷發科", "industry": "AI ASIC", "score100": 59.7, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 261 天（樣本充足（>200，具統計意義））", "top": "M31", "close": 62.6, "ma5": 63.02, "ma20": 66.89, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2454.TW", "name": "聯發科", "industry": "AI ASIC", "score100": 78.3, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 258 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 4165.0, "ma5": 4134.0, "ma20": 4545.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2379.TW", "name": "瑞昱", "industry": "AI ASIC", "score100": 61.3, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 262 天（樣本充足（>200，具統計意義））", "top": "", "close": 791.0, "ma5": 782.2, "ma20": 765.1, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3034.TW", "name": "聯詠", "industry": "AI ASIC", "score100": 67.2, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 270 天（樣本充足（>200，具統計意義））", "top": "", "close": 596.0, "ma5": 586.0, "ma20": 557.2, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "8054.TW", "name": "安國", "industry": "AI ASIC", "score100": 65.7, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "京元電", "close": 75.1, "ma5": 75.02, "ma20": 80.03, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "6695.TW", "name": "芯鼎", "industry": "AI ASIC", "score100": 75.5, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 273 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 54.7, "ma5": 55.2, "ma20": 53.09, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2388.TW", "name": "威盛", "industry": "AI ASIC", "score100": 80.9, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 270 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 68.1, "ma5": 66.92, "ma20": 68.85, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2363.TW", "name": "矽統", "industry": "AI ASIC", "score100": 69.6, "label": "中度偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 272 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 54.9, "ma5": 53.62, "ma20": 56.5, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3041.TW", "name": "揚智", "industry": "AI ASIC", "score100": 70.8, "label": "強烈偏多延續", "confidence": "納入 17 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "京元電", "close": 23.7, "ma5": 23.42, "ma20": 24.16, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "8299.TW", "name": "群聯", "industry": "NAND／AI SSD", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 262 天（樣本充足（>200，具統計意義））", "top": "創見", "close": 1980.0, "ma5": 1926.0, "ma20": 1997.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2337.TW", "name": "旺宏", "industry": "NOR Flash", "score100": 47.5, "label": "中度偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "", "close": 101.5, "ma5": 101.6, "ma20": 110.8, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2344.TW", "name": "華邦電", "industry": "NOR Flash", "score100": 31.9, "label": "弱偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 256 天（樣本充足（>200，具統計意義））", "top": "兆易創新", "close": 166.0, "ma5": 159.8, "ma20": 167.82, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "6239.TW", "name": "力成", "industry": "Memory OSAT", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 128 天（樣本尚可（100–200，具參考意義））", "top": "華邦電", "close": 272.0, "ma5": 260.0, "ma20": 283.25, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2329.TW", "name": "華泰", "industry": "Memory OSAT", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 130 天（樣本尚可（100–200，具參考意義））", "top": "南亞科", "close": 42.25, "ma5": 42.55, "ma20": 43.8, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "8110.TW", "name": "華東", "industry": "Memory OSAT", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 130 天（樣本尚可（100–200，具參考意義））", "top": "華邦電", "close": 45.5, "ma5": 45.3, "ma20": 47.53, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "8150.TW", "name": "南茂", "industry": "Memory OSAT", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 132 天（樣本尚可（100–200，具參考意義））", "top": "南亞科", "close": 99.9, "ma5": 99.86, "ma20": 112.07, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6147.TW", "name": "頎邦", "industry": "DDIC／COF封測", "score100": 86.5, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 270 天（樣本充足（>200，具統計意義））", "top": "瑞鼎", "close": 219.0, "ma5": 210.4, "ma20": 216.68, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2449.TW", "name": "京元電", "industry": "AI ASIC", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 278 天（樣本充足（>200，具統計意義））", "top": "世芯", "close": 276.0, "ma5": 271.6, "ma20": 285.15, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6257.TW", "name": "矽格", "industry": "SoC／Connectivity", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 277 天（樣本充足（>200，具統計意義））", "top": "世芯", "close": 236.0, "ma5": 237.2, "ma20": 257.02, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3264.TW", "name": "欣銓", "industry": "AI晶片測試", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 284 天（樣本充足（>200，具統計意義））", "top": "旺矽", "close": 235.0, "ma5": 251.4, "ma20": 253.2, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6223.TW", "name": "旺矽", "industry": "AI ASIC", "score100": 76.1, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 252 天（樣本充足（>200，具統計意義））", "top": "JEM", "close": 5115.0, "ma5": 5008.0, "ma20": 5340.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6510.TW", "name": "精測", "industry": "AI ASIC", "score100": 75.8, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 249 天（樣本充足（>200，具統計意義））", "top": "雍智", "close": 3200.0, "ma5": 3170.0, "ma20": 3137.75, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "6515.TW", "name": "穎崴", "industry": "AI ASIC", "score100": 80.7, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "", "close": 4970.0, "ma5": 4945.0, "ma20": 5478.25, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6488.TW", "name": "環球晶", "industry": "半導體矽晶圓", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 253 天（樣本充足（>200，具統計意義））", "top": "Siltronic", "close": 844.0, "ma5": 850.8, "ma20": 998.45, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "5483.TW", "name": "中美晶", "industry": "半導體矽晶圓", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 248 天（樣本充足（>200，具統計意義））", "top": "SUMCO", "close": 188.5, "ma5": 190.9, "ma20": 202.88, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3037.TW", "name": "欣興", "industry": "ABF載板", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 247 天（樣本充足（>200，具統計意義））", "top": "Ibiden", "close": 1075.0, "ma5": 1108.0, "ma20": 1180.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "8046.TW", "name": "南電", "industry": "ABF載板", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 250 天（樣本充足（>200，具統計意義））", "top": "AT&S", "close": 1280.0, "ma5": 1318.0, "ma20": 1388.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3189.TW", "name": "景碩", "industry": "ABF載板", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 7 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "AT&S", "close": 978.0, "ma5": 998.8, "ma20": 1023.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "1815.TW", "name": "富喬", "industry": "玻纖布", "score100": 30.0, "label": "弱偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "建榮", "close": 138.0, "ma5": 142.6, "ma20": 133.47, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "1802.TW", "name": "台玻", "industry": "玻纖布", "score100": 39.9, "label": "弱偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "建榮", "close": 64.4, "ma5": 67.36, "ma20": 63.76, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "5475.TW", "name": "德宏", "industry": "玻纖布", "score100": 16.4, "label": "弱偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 267 天（樣本充足（>200，具統計意義））", "top": "建榮", "close": 179.0, "ma5": 202.0, "ma20": 196.07, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "1446.TW", "name": "宏和", "industry": "玻纖布", "score100": 69.3, "label": "中度偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 13.4, "ma5": 13.37, "ma20": 13.42, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "8358.TW", "name": "金居", "industry": "HVLP銅箔", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 269 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 432.5, "ma5": 450.7, "ma20": 495.07, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "1303.TW", "name": "南亞", "industry": "HVLP銅箔", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 313.0, "ma5": 309.4, "ma20": 299.27, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "4989.TW", "name": "榮科", "industry": "HVLP銅箔", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 65.4, "ma5": 69.22, "ma20": 68.17, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2383.TW", "name": "台光電", "industry": "玻纖布", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 280 天（樣本充足（>200，具統計意義））", "top": "金像電", "close": 4930.0, "ma5": 5094.0, "ma20": 5338.0, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6274.TW", "name": "台燿", "industry": "玻纖布", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 280 天（樣本充足（>200，具統計意義））", "top": "金居", "close": 1335.0, "ma5": 1444.0, "ma20": 1593.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6213.TW", "name": "聯茂", "industry": "CCL", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 281 天（樣本充足（>200，具統計意義））", "top": "金居", "close": 748.0, "ma5": 794.8, "ma20": 760.5, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2368.TW", "name": "金像電", "industry": "HVLP銅箔", "score100": 81.4, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 1140.0, "ma5": 1160.0, "ma20": 1188.25, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3044.TW", "name": "健鼎", "industry": "AI PCB", "score100": 82.4, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 270 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 534.0, "ma5": 559.8, "ma20": 564.05, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2313.TW", "name": "華通", "industry": "AI PCB", "score100": 83.3, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 271 天（樣本充足（>200，具統計意義））", "top": "台燿", "close": 224.5, "ma5": 231.5, "ma20": 238.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2327.TW", "name": "國巨", "industry": "被動元件／MLCC", "score100": 77.2, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 250 天（樣本充足（>200，具統計意義））", "top": "凱美", "close": 541.0, "ma5": 530.6, "ma20": 581.7, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2492.TW", "name": "華新科", "industry": "被動元件／MLCC", "score100": 77.2, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 255 天（樣本充足（>200，具統計意義））", "top": "凱美", "close": 390.0, "ma5": 385.8, "ma20": 381.3, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "6173.TW", "name": "信昌電", "industry": "被動元件／MLCC", "score100": 70.6, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 256 天（樣本充足（>200，具統計意義））", "top": "大毅", "close": 283.5, "ma5": 288.2, "ma20": 294.4, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2382.TW", "name": "廣達", "industry": "AI Server", "score100": 59.5, "label": "中度偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 266 天（樣本充足（>200，具統計意義））", "top": "晟銘電", "close": 327.0, "ma5": 324.5, "ma20": 326.12, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "6669.TW", "name": "緯穎", "industry": "AI Server", "score100": 67.4, "label": "中度偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 274 天（樣本充足（>200，具統計意義））", "top": "勤誠", "close": 1940.0, "ma5": 1910.0, "ma20": 2051.75, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2376.TW", "name": "技嘉", "industry": "AI Server", "score100": 78.9, "label": "強烈偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "鴻海", "close": 360.5, "ma5": 355.3, "ma20": 360.95, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2377.TW", "name": "微星", "industry": "AI Server", "score100": 62.6, "label": "中度偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 258 天（樣本充足（>200，具統計意義））", "top": "晟銘電", "close": 168.5, "ma5": 164.9, "ma20": 158.43, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2357.TW", "name": "華碩", "industry": "AI Server", "score100": 63.4, "label": "中度偏多延續", "confidence": "納入 10 檔關聯股；其中天數樣本最少的一檔為 258 天（樣本充足（>200，具統計意義））", "top": "Lenovo", "close": 983.0, "ma5": 969.8, "ma20": 979.05, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3324.TW", "name": "雙鴻", "industry": "AI散熱／液冷", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 255 天（樣本充足（>200，具統計意義））", "top": "建準", "close": 1400.0, "ma5": 1395.0, "ma20": 1468.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3017.TW", "name": "奇鋐", "industry": "AI散熱／液冷", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 266 天（樣本充足（>200，具統計意義））", "top": "建準", "close": 3215.0, "ma5": 3246.0, "ma20": 3359.0, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3653.TW", "name": "健策", "industry": "AI散熱／液冷", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "建準", "close": 6345.0, "ma5": 6317.0, "ma20": 6767.0, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3081.TW", "name": "聯亞", "industry": "矽光子／CPO", "score100": 57.8, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 267 天（樣本充足（>200，具統計意義））", "top": "", "close": 2500.0, "ma5": 2494.0, "ma20": 2726.25, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2455.TW", "name": "全新", "industry": "矽光子／CPO", "score100": 69.5, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric", "close": 503.0, "ma5": 484.6, "ma20": 523.92, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "4991.TW", "name": "環宇-KY", "industry": "矽光子／CPO", "score100": 64.6, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric", "close": 430.0, "ma5": 430.7, "ma20": 472.0, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "4971.TW", "name": "IET-KY", "industry": "矽光子／CPO", "score100": 55.7, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 269 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric", "close": 483.0, "ma5": 470.4, "ma20": 528.67, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3105.TW", "name": "穩懋", "industry": "矽光子／CPO", "score100": 54.9, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 266 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric", "close": 540.0, "ma5": 508.5, "ma20": 538.45, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "8086.TW", "name": "宏捷科", "industry": "矽光子／CPO", "score100": 50.6, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 258 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric", "close": 124.5, "ma5": 124.3, "ma20": 129.47, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3363.TW", "name": "上詮", "industry": "矽光子／CPO", "score100": 63.3, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 264 天（樣本充足（>200，具統計意義））", "top": "", "close": 521.0, "ma5": 521.2, "ma20": 585.85, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3163.TW", "name": "波若威", "industry": "矽光子／CPO", "score100": 52.5, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric", "close": 562.0, "ma5": 561.4, "ma20": 630.7, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "4979.TW", "name": "華星光", "industry": "矽光子／CPO", "score100": 62.0, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "", "close": 486.5, "ma5": 472.0, "ma20": 535.58, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3450.TW", "name": "聯鈞", "industry": "矽光子／CPO", "score100": 59.7, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "Sumitomo Electric", "close": 440.5, "ma5": 439.1, "ma20": 487.82, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "4977.TW", "name": "眾達-KY", "industry": "矽光子／CPO", "score100": 58.6, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 263 天（樣本充足（>200，具統計意義））", "top": "", "close": 182.5, "ma5": 174.3, "ma20": 175.8, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "6451.TW", "name": "訊芯-KY", "industry": "矽光子／CPO", "score100": 60.6, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "", "close": 360.5, "ma5": 361.7, "ma20": 391.8, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "3711.TW", "name": "日月光", "industry": "矽光子／CPO", "score100": 67.0, "label": "中度偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 255 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric", "close": 693.0, "ma5": 671.0, "ma20": 701.5, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2330.TW", "name": "台積電", "industry": "半導體矽晶圓", "score100": 71.8, "label": "強烈偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 253 天（樣本充足（>200，具統計意義））", "top": "Mitsubishi Electric", "close": 2420.0, "ma5": 2410.0, "ma20": 2477.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3008.TW", "name": "大立光", "industry": "光學鏡頭－手機", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 260 天（樣本充足（>200，具統計意義））", "top": "亞光", "close": 6135.0, "ma5": 6179.0, "ma20": 6486.5, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3362.TW", "name": "先進光", "industry": "光學鏡頭－手機", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 260 天（樣本充足（>200，具統計意義））", "top": "今國光", "close": 161.0, "ma5": 163.8, "ma20": 177.72, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3406.TW", "name": "玉晶光", "industry": "光學鏡頭－手機", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 265 天（樣本充足（>200，具統計意義））", "top": "亞光", "close": 1330.0, "ma5": 1203.0, "ma20": 1083.15, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "4585.TW", "name": "達明", "industry": "機器人／Physical AI", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 259 天（樣本充足（>200，具統計意義））", "top": "所羅門", "close": 266.5, "ma5": 271.4, "ma20": 283.73, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6415.TW", "name": "矽力*-KY", "industry": "AI機櫃IC－電源／高速網通", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 261 天（樣本充足（>200，具統計意義））", "top": "聯發科", "close": 523.0, "ma5": 494.1, "ma20": 460.18, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "6526.TW", "name": "達發", "industry": "AI機櫃IC－電源／高速網通", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 12 檔關聯股；其中天數樣本最少的一檔為 262 天（樣本充足（>200，具統計意義））", "top": "聯發科", "close": 791.0, "ma5": 795.6, "ma20": 801.65, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3231.TW", "name": "緯創", "industry": "記憶體模組", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 125 天（樣本尚可（100–200，具參考意義））", "top": "南亞科", "close": 194.0, "ma5": 192.5, "ma20": 187.07, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "2615.TW", "name": "萬海", "industry": "貨櫃／航運電子關聯", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 254 天（樣本充足（>200，具統計意義））", "top": "陽明", "close": 118.0, "ma5": 118.2, "ma20": 117.03, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "8039.TW", "name": "台虹", "industry": "電源／AI機櫃", "score100": 33.3, "label": "弱偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 262 天（樣本充足（>200，具統計意義））", "top": "台光電", "close": 263.0, "ma5": 275.9, "ma20": 294.18, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2301.TW", "name": "光寶科", "industry": "電子製造／零組件", "score100": 18.5, "label": "弱偏多延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 242 天（樣本充足（>200，具統計意義））", "top": "台達電", "close": 259.0, "ma5": 259.5, "ma20": 275.98, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2464.TW", "name": "盟立", "industry": "電子材料／零組件", "score100": 66.8, "label": "中度偏多延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 256 天（樣本充足（>200，具統計意義））", "top": "廣運", "close": 176.0, "ma5": 170.7, "ma20": 182.15, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2059.TW", "name": "川湖", "industry": "電子零組件／連接器", "score100": 26.8, "label": "弱偏多延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 276 天（樣本充足（>200，具統計意義））", "top": "勤誠", "close": 10090.0, "ma5": 9964.0, "ma20": 10865.25, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "6214.TW", "name": "精誠", "industry": "電子零組件／連接器", "score100": -16.5, "label": "弱偏空延續", "confidence": "納入 4 檔關聯股；其中天數樣本最少的一檔為 238 天（樣本充足（>200，具統計意義））", "top": "零壹", "close": 201.5, "ma5": 200.3, "ma20": 194.05, "maAlignment": "多頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2395.TW", "name": "研華", "industry": "電子零組件", "score100": 51.6, "label": "中度偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 247 天（樣本充足（>200，具統計意義））", "top": "樺漢", "close": 689.0, "ma5": 682.0, "ma20": 706.0, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "2474.TW", "name": "可成", "industry": "AI Server機構件／金屬機殼", "score100": 47.6, "label": "中度偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 241 天（樣本充足（>200，具統計意義））", "top": "Hon Hai", "close": 197.0, "ma5": 196.1, "ma20": 199.2, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "8103.TW", "name": "瀚荃", "industry": "AI Server電源／連接器", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 259 天（樣本充足（>200，具統計意義））", "top": "台達電", "close": 106.5, "ma5": 106.8, "ma20": 112.58, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6531.TW", "name": "愛普", "industry": "矽電容／Silicon Capacitor", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 131 天（樣本尚可（100–200，具參考意義））", "top": "高深寬比深溝槽 堆疊電容製程", "close": 836.0, "ma5": 824.4, "ma20": 909.3, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6770.TW", "name": "力積電", "industry": "矽電容／Silicon Capacitor", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 130 天（樣本尚可（100–200，具參考意義））", "top": "Murata", "close": 70.4, "ma5": 67.94, "ma20": 70.48, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2303.TW", "name": "聯電", "industry": "矽電容／Silicon Capacitor", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 124 天（樣本尚可（100–200，具參考意義））", "top": "Murata", "close": 125.0, "ma5": 126.3, "ma20": 140.45, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "2421.TW", "name": "建準", "industry": "AI散熱／液冷", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 259 天（樣本充足（>200，具統計意義））", "top": "瀚荃", "close": 154.5, "ma5": 156.7, "ma20": 164.38, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "4931.TW", "name": "新盛力", "industry": "大電流連接器／AI電源", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 263 天（樣本充足（>200，具統計意義））", "top": "", "close": 211.5, "ma5": 208.6, "ma20": 231.18, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6830.TW", "name": "汎銓", "industry": "半導體材料分析／檢測", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 3 檔關聯股；其中天數樣本最少的一檔為 267 天（樣本充足（>200，具統計意義））", "top": "日月光", "close": 492.5, "ma5": 481.3, "ma20": 511.48, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "7711.TW", "name": "永擎", "industry": "AI伺服器主板／系統", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 6 檔關聯股；其中天數樣本最少的一檔為 206 天（樣本充足（>200，具統計意義））", "top": "華擎", "close": 577.0, "ma5": 594.6, "ma20": 595.6, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "3234.TW", "name": "光環", "industry": "InP光通訊代工", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 270 天（樣本充足（>200，具統計意義））", "top": "華星光", "close": 174.5, "ma5": 180.4, "ma20": 177.5, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "6291.TW", "name": "沛亨", "industry": "光纖／光通訊", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 274 天（樣本充足（>200，具統計意義））", "top": "上詮", "close": 381.0, "ma5": 377.0, "ma20": 430.75, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "4908.TW", "name": "前鼎", "industry": "電子零組件／連接器", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 280 天（樣本充足（>200，具統計意義））", "top": "建準", "close": 202.5, "ma5": 205.1, "ma20": 217.68, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "NVDA", "name": "", "industry": "", "score100": 78.3, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 271 天（樣本充足（>200，具統計意義））", "top": "", "close": 217.94, "ma5": 215.82, "ma20": 223.92, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "AMD", "name": "", "industry": "", "score100": 82.5, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 271 天（樣本充足（>200，具統計意義））", "top": "", "close": 560.26, "ma5": 533.8, "ma20": 579.11, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "DELL", "name": "", "industry": "", "score100": 77.5, "label": "強烈偏多延續", "confidence": "納入 9 檔關聯股；其中天數樣本最少的一檔為 271 天（樣本充足（>200，具統計意義））", "top": "", "close": 501.96, "ma5": 472.86, "ma20": 516.61, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "TSM", "name": "", "industry": "", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "Intel", "close": 436.87, "ma5": 424.8, "ma20": 442.41, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "INTC", "name": "", "industry": "", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 267 天（樣本充足（>200，具統計意義））", "top": "", "close": 93.74, "ma5": 89.92, "ma20": 101.84, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "MU", "name": "", "industry": "", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 8 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "Intel", "close": 928.76, "ma5": 896.03, "ma20": 971.22, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "ARM", "name": "", "industry": "", "score100": 75.1, "label": "強烈偏多延續", "confidence": "納入 16 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "台積電", "close": 226.6, "ma5": 219.39, "ma20": 254.88, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "GOOGL", "name": "", "industry": "", "score100": 40.0, "label": "中度偏多延續", "confidence": "納入 16 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "", "close": 320.58, "ma5": 323.31, "ma20": 340.29, "maAlignment": "空頭排列", "maFilter": "", "maNote": "非強烈訊號，不套用均線濾網"}, {"ticker": "META", "name": "", "industry": "", "score100": 88.3, "label": "強烈偏多延續", "confidence": "納入 16 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "", "close": 620.19, "ma5": 647.95, "ma20": 708.34, "maAlignment": "空頭排列", "maFilter": "訊號未過濾(偏多)", "maNote": "分數強烈偏多，但均線還不是多頭排列或尚未站上5日線，暫不列入推薦"}, {"ticker": "MSFT", "name": "", "industry": "", "score100": 79.2, "label": "強烈偏多延續", "confidence": "納入 16 檔關聯股；其中天數樣本最少的一檔為 268 天（樣本充足（>200，具統計意義））", "top": "", "close": 531.33, "ma5": 528.49, "ma20": 527.95, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "AAPL", "name": "", "industry": "", "score100": 100.0, "label": "強烈偏多延續", "confidence": "納入 2 檔關聯股；其中天數樣本最少的一檔為 266 天（樣本充足（>200，具統計意義））", "top": "Samsung", "close": 347.1, "ma5": 346.19, "ma20": 340.86, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "TSLA", "name": "", "industry": "", "score100": 78.6, "label": "強烈偏多延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 277 天（樣本充足（>200，具統計意義））", "top": "Rivian", "close": 407.46, "ma5": 386.47, "ma20": 374.93, "maAlignment": "多頭排列", "maFilter": "推薦買進", "maNote": "分數強烈偏多，均線也是多頭排列且站上5日線，兩者一致"}, {"ticker": "UNH", "name": "", "industry": "", "score100": -100.0, "label": "強烈偏空延續", "confidence": "納入 5 檔關聯股；其中天數樣本最少的一檔為 284 天（樣本充足（>200，具統計意義））", "top": "CVS Health", "close": 410.39, "ma5": 416.23, "ma20": 393.6, "maAlignment": "多頭排列", "maFilter": "訊號未過濾(偏空)", "maNote": "分數強烈偏空，但均線還不是空頭排列或尚未跌破5日線，暫不列入留意名單"}];
+const INDUSTRIES = ["ABF載板", "AI ASIC", "AI PCB", "AI Server", "AI Server機構件／金屬機殼", "AI Server電源／連接器", "AI伺服器主板／系統", "AI散熱／液冷", "AI晶片測試", "AI機櫃IC－電源／高速網通", "CCL", "DDIC／COF封測", "HVLP銅箔", "InP光通訊代工", "Memory OSAT", "NAND／AI SSD", "NOR Flash", "SoC／Connectivity", "光學鏡頭－手機", "光纖／光通訊", "半導體材料分析／檢測", "半導體矽晶圓", "大電流連接器／AI電源", "機器人／Physical AI", "玻纖布", "矽光子／CPO", "矽電容／Silicon Capacitor", "被動元件／MLCC", "記憶體模組", "貨櫃／航運電子關聯", "電子材料／零組件", "電子製造／零組件", "電子零組件", "電子零組件／連接器", "電源／AI機櫃"];
+const REPORT_DATE = "2026-10-28";
+
+
+// tier is looked up from the backend's own label string (correlation_engine.py
+// label_for_score), never re-derived from the raw score — that guarantees the
+// dashboard's color/side always agrees with the report even at tier boundaries.
+const LABEL_TO_TIER = {
+  '強烈偏多延續': {key:'up-strong', side:'up'},
+  '中度偏多延續': {key:'up-mid', side:'up'},
+  '弱偏多延續':   {key:'up-weak', side:'up'},
+  '方向不明/觀望': {key:'flat', side:'flat'},
+  '弱偏空延續':   {key:'down-weak', side:'down'},
+  '中度偏空延續': {key:'down-mid', side:'down'},
+  '強烈偏空延續': {key:'down-strong', side:'down'},
+};
+function tierOf(label) {
+  return LABEL_TO_TIER[label] || {key:'flat', side:'flat'};
+}
+const TIER_META = {
+  'up-strong':  {barVar:'--up-strong',  bgVar:'--up-strong-bg', fgVar:'--up-strong'},
+  'up-mid':     {barVar:'--up-mid',     bgVar:'--up-mid-bg',    fgVar:'--up-mid'},
+  'up-weak':    {barVar:'--up-weak',    bgVar:'--up-weak-bg',   fgVar:'--up-mid'},
+  'flat':       {barVar:'--flat',       bgVar:'--flat-bg',      fgVar:'--flat'},
+  'down-weak':  {barVar:'--down-weak',  bgVar:'--down-weak-bg', fgVar:'--down-mid'},
+  'down-mid':   {barVar:'--down-mid',   bgVar:'--down-mid-bg',  fgVar:'--down-mid'},
+  'down-strong':{barVar:'--down-strong',bgVar:'--down-strong-bg',fgVar:'--down-strong'},
+};
+
+// split confidence string "納入 X 檔關聯股；其中...(...)" into two lines
+function splitConfidence(s) {
+  if (!s) return {main:'', sub:''};
+  const parts = s.split('；');
+  return {main: parts[0] || '', sub: parts.slice(1).join('；')};
+}
+
+let state = {
+  search: '',
+  industry: '',
+  labelFilter: null, // 'up' | 'flat' | 'down' | null
+  sortKey: 'score100',
+  sortDir: 'desc',
+};
+
+const LABEL_ORDER = ['強烈偏多延續','中度偏多延續','弱偏多延續','方向不明/觀望','弱偏空延續','中度偏空延續','強烈偏空延續'];
+
+function init() {
+  // report date
+  document.getElementById('report-date').textContent = REPORT_DATE;
+
+  // industry options
+  const sel = document.getElementById('industry-filter');
+  INDUSTRIES.forEach(ind => {
+    const opt = document.createElement('option');
+    opt.value = ind; opt.textContent = ind;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => { state.industry = sel.value; render(); });
+
+  document.getElementById('search').addEventListener('input', (e) => {
+    state.search = e.target.value.trim().toLowerCase();
+    render();
+  });
+
+  const chipsWrap = document.getElementById('label-chips');
+  const chipDefs = [
+    {key:'up', label:'偏多', color:'var(--up-mid)'},
+    {key:'flat', label:'觀望', color:'var(--flat)'},
+    {key:'down', label:'偏空', color:'var(--down-mid)'},
+  ];
+  chipDefs.forEach(cd => {
+    const b = document.createElement('button');
+    b.className = 'chip';
+    b.type = 'button';
+    b.setAttribute('aria-pressed', 'false');
+    b.style.setProperty('--dotcolor', cd.color);
+    b.innerHTML = `<span class="dot"></span>${cd.label}`;
+    b.addEventListener('click', () => {
+      state.labelFilter = (state.labelFilter === cd.key) ? null : cd.key;
+      [...chipsWrap.children].forEach(c => c.setAttribute('aria-pressed', 'false'));
+      if (state.labelFilter) b.setAttribute('aria-pressed', 'true');
+      render();
+    });
+    chipsWrap.appendChild(b);
+  });
+
+  document.querySelectorAll('th button[data-key]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      if (state.sortKey === key) {
+        state.sortDir = state.sortDir === 'desc' ? 'asc' : 'desc';
+      } else {
+        state.sortKey = key;
+        state.sortDir = (key === 'score100') ? 'desc' : 'asc';
+      }
+      render();
+    });
+  });
+
+  renderStats();
+  renderNarrative();
+  renderPicks();
+  renderIndustryChart();
+  render();
+}
+
+// ---- 均線二次確認名單（依 DATA 動態算，maFilter 是後端已經合併判斷過的結果）----
+function renderPicks() {
+  const ups = DATA.filter(d => d.maFilter === '推薦買進');
+  const downs = DATA.filter(d => d.maFilter === '留意/警示');
+  document.getElementById('picks-up-count').textContent = ups.length;
+  document.getElementById('picks-down-count').textContent = downs.length;
+
+  const fmtMa = d => (d.ma5 != null && d.ma20 != null)
+    ? `收盤 ${d.close != null ? d.close.toFixed(1) : '—'}・5日均線 ${d.ma5.toFixed(1)}・20日均線 ${d.ma20.toFixed(1)}`
+    : '';
+
+  const renderList = (elId, list, side) => {
+    const el = document.getElementById(elId);
+    if (!list.length) {
+      el.innerHTML = `<div class="picks-empty">今天沒有均線也同方向確認的標的</div>`;
+      return;
+    }
+    const sorted = list.slice().sort((a, b) => side === 'up' ? b.score100 - a.score100 : a.score100 - b.score100);
+    el.innerHTML = sorted.map(d => `
+      <div class="pick-item ${side}">
+        <span>
+          <span class="pick-name">${escapeHtml(d.name)}</span><span class="pick-code mono">${d.ticker.replace('.TW', '')}</span>
+          <span class="pick-ma mono">${fmtMa(d)}</span>
+        </span>
+        <span class="pick-score">${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}</span>
+      </div>
+    `).join('');
+  };
+  renderList('picks-up-list', ups, 'up');
+  renderList('picks-down-list', downs, 'down');
+}
+
+function maBadgeStyle(filterVal) {
+  if (filterVal === '推薦買進') return `--badgebg:var(--up-strong-bg);--badgefg:var(--up-strong)`;
+  if (filterVal === '留意/警示') return `--badgebg:var(--down-strong-bg);--badgefg:var(--down-strong)`;
+  return `--badgebg:var(--flat-bg);--badgefg:var(--ink-faint)`;
+}
+
+// ---- 產業別平均分數（依 DATA 動態算，每天資料一換這裡就自動跟著換）----
+function computeIndustryStats() {
+  const groups = {};
+  DATA.forEach(d => {
+    if (!d.industry) return;
+    (groups[d.industry] = groups[d.industry] || []).push(d.score100);
+  });
+  return Object.entries(groups)
+    .map(([industry, scores]) => ({
+      industry,
+      avg: scores.reduce((a, b) => a + b, 0) / scores.length,
+      n: scores.length,
+    }))
+    .sort((a, b) => b.avg - a.avg);
+}
+
+function renderIndustryChart() {
+  const stats = computeIndustryStats();
+  const wrap = document.getElementById('industry-chart');
+  wrap.innerHTML = '';
+  stats.forEach(s => {
+    const pct = Math.min(Math.abs(s.avg), 100) / 100 * 50;
+    const color = s.avg > 10 ? 'var(--up-mid)' : s.avg < -10 ? 'var(--down-mid)' : 'var(--flat)';
+    const row = document.createElement('div');
+    row.className = 'ind-row';
+    row.innerHTML = `
+      <div class="ind-name" title="${escapeHtml(s.industry)}">${escapeHtml(s.industry)}</div>
+      <div class="ind-track">
+        <div class="mid"></div>
+        <div class="ind-fill" style="background:${color};
+          ${s.avg >= 0 ? `left:50%;width:${pct}%;` : `right:50%;width:${pct}%;`}"></div>
+      </div>
+      <div class="ind-val mono">${s.avg > 0 ? '+' : ''}${s.avg.toFixed(0)}<span class="ind-n">n=${s.n}</span></div>
+    `;
+    wrap.appendChild(row);
+  });
+}
+
+// ---- 自動生成的文字總覽（每天依當天資料重新算，不是手寫的固定文字）----
+function renderNarrative() {
+  const total = DATA.length;
+  const sides = DATA.map(d => tierOf(d.label).side);
+  const up = sides.filter(s => s === 'up').length;
+  const flat = sides.filter(s => s === 'flat').length;
+  const down = sides.filter(s => s === 'down').length;
+
+  let tilt;
+  if (up > down * 1.3) tilt = '整體格局明顯偏多';
+  else if (down > up * 1.3) tilt = '整體格局明顯偏空';
+  else tilt = '整體多空互見，沒有一致方向';
+
+  const bySore = DATA.slice().sort((a, b) => b.score100 - a.score100);
+  const topBull = bySore.slice(0, 3);
+  const topBear = bySore.slice(-3).slice().reverse();
+
+  const fmtStock = d => `${escapeHtml(d.name)}（${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}）`;
+  const bullNames = topBull.map(fmtStock).join('、');
+  const bearNames = topBear.map(fmtStock).join('、');
+
+  const indStats = computeIndustryStats();
+  const indStatsQualified = indStats.filter(s => s.n >= 2); // 只挑至少2檔的產業，單一檔不足以代表整個產業
+  const topBullInd = indStatsQualified.slice(0, 2);
+  const topBearInd = indStatsQualified.slice(-2).slice().reverse();
+  const fmtInd = s => `${escapeHtml(s.industry)}（平均 ${s.avg > 0 ? '+' : ''}${s.avg.toFixed(0)}，${s.n} 檔）`;
+
+  const html = `
+    <p>今天（${escapeHtml(REPORT_DATE)}）追蹤的 ${total} 檔目標股中，
+    <span class="hl-up">偏多 ${up} 檔</span>、觀望 ${flat} 檔、
+    <span class="hl-down">偏空 ${down} 檔</span>，${tilt}。</p>
+    <p>個股方面，今天訊號最偏多的是 ${bullNames}；訊號最偏空的是 ${bearNames}。</p>
+    ${indStatsQualified.length ? `<p>以產業別平均分數來看，${topBullInd.map(fmtInd).join('、')} 相對偏多；${topBearInd.map(fmtInd).join('、')} 相對偏空——完整 ${indStats.length} 個產業的排序見下方圖表。</p>` : ''}
+  `;
+  document.getElementById('narrative').innerHTML = html;
+}
+
+function renderStats() {
+  const sides = DATA.map(d => tierOf(d.label).side);
+  const up = sides.filter(s => s === 'up').length;
+  const flat = sides.filter(s => s === 'flat').length;
+  const down = sides.filter(s => s === 'down').length;
+  document.getElementById('stat-up').textContent = up;
+  document.getElementById('stat-flat').textContent = flat;
+  document.getElementById('stat-down').textContent = down;
+}
+
+function matches(d) {
+  if (state.industry && d.industry !== state.industry) return false;
+  if (state.labelFilter) {
+    const side = tierOf(d.label).side;
+    if (side !== state.labelFilter) return false;
+  }
+  if (state.search) {
+    const hay = (d.ticker + ' ' + d.name + ' ' + d.industry).toLowerCase();
+    if (!hay.includes(state.search)) return false;
+  }
+  return true;
+}
+
+function sortRows(rows) {
+  const {sortKey, sortDir} = state;
+  const dir = sortDir === 'desc' ? -1 : 1;
+  return rows.slice().sort((a, b) => {
+    let av = a[sortKey], bv = b[sortKey];
+    if (sortKey === 'label') {
+      av = LABEL_ORDER.indexOf(a.label); bv = LABEL_ORDER.indexOf(b.label);
+    }
+    if (sortKey === 'ticker') {
+      av = a.industry + a.ticker; bv = b.industry + b.ticker;
+    }
+    if (typeof av === 'string') return av.localeCompare(bv, 'zh-Hant') * dir;
+    return (av - bv) * dir;
+  });
+}
+
+function render() {
+  const filtered = DATA.filter(matches);
+  const sorted = sortRows(filtered);
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  document.getElementById('result-count').textContent =
+    `顯示 ${sorted.length} / ${DATA.length} 檔`;
+
+  document.querySelectorAll('th button[data-key]').forEach(btn => {
+    btn.setAttribute('aria-sort', btn.dataset.key === state.sortKey
+      ? (state.sortDir === 'desc' ? 'descending' : 'ascending') : 'none');
+    const arrow = btn.querySelector('.arrow');
+    if (btn.dataset.key === state.sortKey) {
+      arrow.textContent = state.sortDir === 'desc' ? '▾' : '▴';
+    }
+  });
+
+  if (!sorted.length) {
+    const tr = document.createElement('tr');
+    tr.className = 'empty-row';
+    tr.innerHTML = `<td colspan="7">沒有符合條件的股票</td>`;
+    tbody.appendChild(tr);
+    return;
+  }
+
+  sorted.forEach((d, i) => {
+    const tier = tierOf(d.label);
+    const meta = TIER_META[tier.key];
+    const conf = splitConfidence(d.confidence);
+    const pct = Math.min(Math.abs(d.score100), 100) / 100 * 50; // half-width max
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="mono" style="color:var(--ink-faint)">${i + 1}</td>
+      <td>
+        <div class="ticker-cell">
+          <div class="code mono">${d.ticker.replace('.TW','')} <span class="name-cell company">${escapeHtml(d.name)}</span></div>
+          <div class="industry">${escapeHtml(d.industry)}</div>
+        </div>
+      </td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="score-num mono" style="color:var(--${meta.fgVar.slice(2)})">${d.score100 > 0 ? '+' : ''}${d.score100.toFixed(1)}</span>
+          <div class="bar-track" style="flex:1">
+            <div class="mid"></div>
+            <div class="bar-fill" style="background:var(${meta.barVar});
+              ${d.score100 >= 0
+                ? `left:50%; width:${pct}%;`
+                : `right:50%; width:${pct}%;`}"></div>
+          </div>
+        </div>
+      </td>
+      <td><span class="badge" style="--badgebg:var(${meta.bgVar});--badgefg:var(${meta.fgVar})">${d.label}</span></td>
+      <td>${d.maFilter
+        ? `<span class="badge" title="${escapeHtml(d.maNote || '')}" style="${maBadgeStyle(d.maFilter)}">${d.maFilter}</span>`
+        : '<span style="color:var(--ink-faint)">—</span>'}</td>
+      <td class="conf-cell">
+        <div class="conf-main">${escapeHtml(conf.main)}</div>
+        <div class="conf-sub">${escapeHtml(conf.sub)}</div>
+      </td>
+      <td class="top-contrib">${escapeHtml(d.top)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[c]));
+}
+
+init();
+</script>
