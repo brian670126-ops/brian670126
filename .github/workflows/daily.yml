@@ -2,11 +2,18 @@ name: 每日股票關聯分析
 
 on:
   schedule:
-    - cron: '30 23 * * 0-4'
+    - cron: '20 21 * * 0-4'   # 台灣 05:20
+    - cron: '50 21 * * 0-4'   # 台灣 05:50（備援）
+    - cron: '20 22 * * 0-4'   # 台灣 06:20（備援）
   workflow_dispatch: {}
 
 permissions:
   contents: write
+
+# 同一時間只跑一個；後面的排隊等前一個跑完，不會互相取消
+concurrency:
+  group: daily-analysis
+  cancel-in-progress: false
 
 jobs:
   run-analysis:
@@ -15,18 +22,34 @@ jobs:
       - name: 簽出 repo
         uses: actions/checkout@v4
 
+      - name: 檢查今天是否已經跑過
+        id: check
+        run: |
+          TODAY=$(TZ=Asia/Taipei date +%F)
+          if [ "${{ github.event_name }}" = "schedule" ] && [ -f "reports/summary_${TODAY}.csv" ]; then
+            echo "今天(${TODAY})已經有報表，略過這次執行"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: 設定 Python
+        if: steps.check.outputs.skip != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: 'pip'
 
       - name: 安裝套件
+        if: steps.check.outputs.skip != 'true'
         run: pip install pandas numpy scipy yfinance
 
       - name: 執行每日分析
+        if: steps.check.outputs.skip != 'true'
         run: python daily_pipeline.py
 
       - name: 寄送每日Email摘要
+        if: steps.check.outputs.skip != 'true'
         env:
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
@@ -34,6 +57,7 @@ jobs:
         run: python send_daily_email.py
 
       - name: 把結果存回 repo
+        if: steps.check.outputs.skip != 'true'
         run: |
           git config user.name "daily-pipeline-bot"
           git config user.email "actions@github.com"
