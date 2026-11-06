@@ -1,4 +1,4 @@
-﻿編號,產業,關聯欄位,子分類,原始文字,公司名稱,股票代號,星等,是否為供應鏈敘述,group_id,股票代號_單一,yfinance_ticker
+編號,產業,關聯欄位,子分類,原始文字,公司名稱,股票代號,星等,是否為供應鏈敘述,group_id,股票代號_單一,yfinance_ticker
 1,AI ASIC,台灣核心股,大型ASIC,世芯-KY 3661 ★★★★★,世芯-KY,3661,5,False,1,3661,3661.TW
 1,AI ASIC,台灣核心股,,創意3443 ★★★★★,創意,3443,5,False,2,3443,3443.TW
 1,AI ASIC,台灣核心股,,智原3035 ★★★★,智原,3035,4,False,3,3035,3035.TW
@@ -78,7 +78,7 @@
 5,Memory OSAT,全球上游_供應,,Samsung★★★★,Samsung,005930.KS,4,False,75,005930.KS,005930.KS
 5,Memory OSAT,全球競爭_同業,,Hana Micron067310.KQ★★★★★,Hana Micron,067310.KQ,5,False,76,067310.KQ,067310.KQ
 5,Memory OSAT,全球競爭_同業,,AMKR★★★★,,AMKR,4,False,77,AMKR,AMKR
-5,Memory OSAT,全球競爭_同業,,JCET★★★,,JCET,3,False,78,JCET,JCET
+5,Memory OSAT,全球競爭_同業,,JCET★★★,,JCET,3,False,78,JCET,
 5,Memory OSAT,全球合作_需求端,,DRAM/NAND出貨與稼動率,NAND出貨與稼動率,DRAM,0,False,79,DRAM,DRAM
 5,Memory OSAT,台灣高關聯股,,群聯8299★★★,群聯,8299,3,False,80,8299,8299.TW
 5,Memory OSAT,台灣高關聯股,,華邦電2344★★★,華邦電,2344,3,False,81,2344,2344.TW
@@ -168,7 +168,7 @@
 13,CCL,台灣核心股,,台光電2383★★★★★,台光電,2383,5,False,165,2383,2383.TW
 13,CCL,台灣核心股,,台燿6274★★★★★,台燿,6274,5,False,166,6274,6274.TW
 13,CCL,台灣核心股,,聯茂6213★★★★,聯茂,6213,4,False,167,6213,6213.TW
-13,CCL,全球上游_供應,,玻纖布＋HVLP銅箔,玻纖布＋銅箔,HVLP,0,False,168,HVLP,HVLP
+13,CCL,全球上游_供應,,玻纖布＋HVLP銅箔,玻纖布＋銅箔,HVLP,0,False,168,HVLP,
 13,CCL,全球競爭_同業,,Panasonic材料鏈★★★★,Panasonic材料鏈,,4,False,169,,
 13,CCL,全球競爭_同業,,三家互為競爭,三家互為競爭,,0,False,170,,
 13,CCL,全球合作_需求端,,AVGO★★★★★,,AVGO,5,False,171,AVGO,AVGO
@@ -197,9 +197,9 @@
 15,被動元件／MLCC,全球上游_供應,,信昌電陶瓷粉★★★★,信昌電陶瓷粉,,4,False,194,,
 15,被動元件／MLCC,全球上游_供應,,勤凱4760★★★★,勤凱,4760,4,False,195,4760,4760.TW
 15,被動元件／MLCC,全球競爭_同業,,Murata6981.T★★★★★,Murata,6981.T,5,False,196,6981.T,6981.T
-15,被動元件／MLCC,全球競爭_同業,,SEMCO★★★★★,,SEMCO,5,False,197,SEMCO,SEMCO
+15,被動元件／MLCC,全球競爭_同業,,SEMCO★★★★★,,SEMCO,5,False,197,SEMCO,
 15,被動元件／MLCC,全球競爭_同業,,Taiyo Yuden★★★★,Taiyo Yuden,6976.T,4,False,198,6976.T,6976.T
-15,被動元件／MLCC,全球競爭_同業,,TDK★★★★,,TDK,4,False,199,TDK,TDK
+15,被動元件／MLCC,全球競爭_同業,,TDK★★★★,,TDK,4,False,199,TDK,
 15,被動元件／MLCC,全球競爭_同業,,VSH★★★,,VSH,3,False,200,VSH,VSH
 15,被動元件／MLCC,全球合作_需求端,,AI Server／車用／手機／工控,AI Server 車用 手機 工控,,0,False,201,,
 15,被動元件／MLCC,台灣高關聯股,,禾伸堂3026★★★★,禾伸堂,3026,4,False,202,3026,3026.TW
@@ -249,12 +249,12 @@
 18,矽光子／CPO,台灣核心股,封裝,訊芯-KY6451★★★★,訊芯-KY,6451,4,False,246,6451,6451.TW
 18,矽光子／CPO,台灣核心股,,日月光3711★★★★,日月光,3711,4,False,247,3711,3711.TW
 18,矽光子／CPO,台灣核心股,,台積電2330★★★★★,台積電,2330,5,False,248,2330,2330.TW
-18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,MOCVD,0,True,249,MOCVD,MOCVD
-18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,MBE,0,True,250,MBE,MBE
+18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,MOCVD,0,True,249,MOCVD,
+18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,MBE,0,True,250,MBE,
 18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,PD,0,True,251,PD,PD
 18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,APD,0,True,252,APD,APD
-18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,FAU,0,True,253,FAU,FAU
-18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,CPO,0,True,254,CPO,CPO
+18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,FAU,0,True,253,FAU,
+18,矽光子／CPO,全球上游_供應,,InP基板/銦材料 → MOCVD/MBE磊晶 → InP雷射/PD/APD → SiPh/FAU → 光模組 → CPO封裝,,CPO,0,True,254,CPO,
 18,矽光子／CPO,全球上游_供應,,InP供給與銦出口政策為上游風險,InP供給與銦出口政策為上游風險,,0,False,255,,
 18,矽光子／CPO,全球競爭_同業,,COHR★★★★★,,COHR,5,False,256,COHR,COHR
 18,矽光子／CPO,全球競爭_同業,,LITE★★★★★,,LITE,5,False,257,LITE,LITE
@@ -267,11 +267,11 @@
 18,矽光子／CPO,全球合作_需求端,,AVGO★★★★★,,AVGO,5,False,264,AVGO,AVGO
 18,矽光子／CPO,全球合作_需求端,,MRVL★★★★,,MRVL,4,False,265,MRVL,MRVL
 18,矽光子／CPO,全球合作_需求端,,AMZN/GOOGL/MSFT/META資料中心CapEx,GOOGL/MSFT/META資料中心CapEx,AMZN,0,False,266,AMZN,AMZN
-18,矽光子／CPO,全球合作_需求端,,800G→1.6T→CPO升級,,800G,0,True,267,800G,800G
-18,矽光子／CPO,全球合作_需求端,,800G→1.6T→CPO升級,,CPO,0,True,268,CPO,CPO
-18,矽光子／CPO,台灣高關聯股,,聯亞↔IET-KY↔環宇-KY（InP）★★★★★,聯亞↔-KY↔環宇-KY InP,IET,5,False,269,IET,IET
+18,矽光子／CPO,全球合作_需求端,,800G→1.6T→CPO升級,,800G,0,True,267,800G,
+18,矽光子／CPO,全球合作_需求端,,800G→1.6T→CPO升級,,CPO,0,True,268,CPO,
+18,矽光子／CPO,台灣高關聯股,,聯亞↔IET-KY↔環宇-KY（InP）★★★★★,聯亞↔-KY↔環宇-KY InP,IET,5,False,269,IET,
 18,矽光子／CPO,台灣高關聯股,,全新↔穩懋↔宏捷科（三五族）★★★★,全新↔穩懋↔宏捷科 三五族,,4,False,270,,
-18,矽光子／CPO,台灣高關聯股,,上詮/波若威（FAU）★★★★,上詮/波若威,FAU,4,False,271,FAU,FAU
+18,矽光子／CPO,台灣高關聯股,,上詮/波若威（FAU）★★★★,上詮/波若威,FAU,4,False,271,FAU,
 18,矽光子／CPO,台灣高關聯股,,華星光/聯鈞/眾達（光模組）★★★★★,華星光/聯鈞/眾達 光模組,,5,False,272,,
 19,光學鏡頭－手機,台灣核心股,,大立光3008★★★★★,大立光,3008,5,False,273,3008,3008.TW
 19,光學鏡頭－手機,台灣核心股,,先進光3362★★★★,先進光,3362,4,False,274,3362,3362.TW
@@ -289,7 +289,7 @@
 20,光學鏡頭－CPO/AI光學,全球競爭_同業,,COHR★★★★★,,COHR,5,False,286,COHR,COHR
 20,光學鏡頭－CPO/AI光學,全球競爭_同業,,LITE★★★★,,LITE,4,False,287,LITE,LITE
 20,光學鏡頭－CPO/AI光學,全球合作_需求端,,AVGO★★★★★,,AVGO,5,False,288,AVGO,AVGO
-20,光學鏡頭－CPO/AI光學,全球合作_需求端,,CPO/高速光通訊,高速光通訊,CPO,0,False,289,CPO,CPO
+20,光學鏡頭－CPO/AI光學,全球合作_需求端,,CPO/高速光通訊,高速光通訊,CPO,0,False,289,CPO,
 20,光學鏡頭－CPO/AI光學,台灣高關聯股,,波若威3163★★★★,波若威,3163,4,False,290,3163,3163.TW
 20,光學鏡頭－CPO/AI光學,台灣高關聯股,,華星光4979★★★★,華星光,4979,4,False,291,4979,4979.TW
 21,機器人／Physical AI,台灣核心股,,達明4585★★★★★,達明,4585,5,False,292,4585,4585.TW
@@ -297,7 +297,7 @@
 21,機器人／Physical AI,全球上游_供應,,伺服馬達／減速機／線性傳動,伺服馬達 減速機 線性傳動,,0,False,294,,
 21,機器人／Physical AI,全球競爭_同業,,Doosan454910.KS★★★★★,Doosan,454910.KS,5,False,295,454910.KS,454910.KS
 21,機器人／Physical AI,全球競爭_同業,,FANUC6954.T★★★★★,FANUC,6954.T,5,False,296,6954.T,6954.T
-21,機器人／Physical AI,全球競爭_同業,,ABB★★★★,,ABB,4,False,297,ABB,ABB
+21,機器人／Physical AI,全球競爭_同業,,ABB★★★★,,ABB,4,False,297,ABB,
 21,機器人／Physical AI,全球競爭_同業,,Yaskawa6506.T★★★★,Yaskawa,6506.T,4,False,298,6506.T,6506.T
 21,機器人／Physical AI,全球合作_需求端,,NVDA Isaac/Jetson,Isaac/Jetson,NVDA,0,False,299,NVDA,NVDA
 21,機器人／Physical AI,全球合作_需求端,,廣達2382★★★★★,廣達,2382,5,False,300,2382,2382.TW
@@ -318,8 +318,8 @@
 22,AI機櫃IC－電源／高速網通,全球競爭_同業,高速網通,QCOM ★★★★,,QCOM,4,False,314,QCOM,QCOM
 22,AI機櫃IC－電源／高速網通,全球合作_需求端,,AI機櫃電源重構,AI機櫃電源重構,,0,False,315,,
 22,AI機櫃IC－電源／高速網通,全球合作_需求端,,企業級SSD電源,企業級SSD電源,,0,False,316,,
-22,AI機櫃IC－電源／高速網通,全球合作_需求端,,800G/1.6T高速網通與光模組,高速網通與光模組,800G/1.6T,0,False,317,800G,800G
-22,AI機櫃IC－電源／高速網通,全球合作_需求端,,800G/1.6T高速網通與光模組,高速網通與光模組,800G/1.6T,0,False,317,1.6T,1.6T
+22,AI機櫃IC－電源／高速網通,全球合作_需求端,,800G/1.6T高速網通與光模組,高速網通與光模組,800G/1.6T,0,False,317,800G,
+22,AI機櫃IC－電源／高速網通,全球合作_需求端,,800G/1.6T高速網通與光模組,高速網通與光模組,800G/1.6T,0,False,317,1.6T,
 22,AI機櫃IC－電源／高速網通,台灣高關聯股,,台達電2308 ★★★★,台達電,2308,4,False,318,2308,2308.TW
 22,AI機櫃IC－電源／高速網通,台灣高關聯股,,聯發科2454 ★★★★,聯發科,2454,4,False,319,2454,2454.TW
 22,AI機櫃IC－電源／高速網通,台灣高關聯股,,瑞昱2379 ★★★★,瑞昱,2379,4,False,320,2379,2379.TW
@@ -336,7 +336,7 @@
 24,貨櫃／航運電子關聯,全球上游_供應,,燃油／港口／貨櫃運價,燃油 港口 貨櫃運價,,0,False,331,,
 24,貨櫃／航運電子關聯,全球競爭_同業,,ZIM★★★,,ZIM,3,False,332,ZIM,ZIM
 24,貨櫃／航運電子關聯,全球競爭_同業,,Maersk★★★,Maersk,,3,False,333,,
-24,貨櫃／航運電子關聯,全球合作_需求端,,SCFI／亞洲航線需求,亞洲航線需求,SCFI,0,False,334,SCFI,SCFI
+24,貨櫃／航運電子關聯,全球合作_需求端,,SCFI／亞洲航線需求,亞洲航線需求,SCFI,0,False,334,SCFI,
 24,貨櫃／航運電子關聯,台灣高關聯股,,長榮2603,長榮,2603,0,False,335,2603,2603.TW
 24,貨櫃／航運電子關聯,台灣高關聯股,,陽明2609,陽明,2609,0,False,336,2609,2609.TW
 25,電源／AI機櫃,台灣核心股,,台虹8039 ★★★★,台虹,8039,4,False,337,8039,8039.TW
@@ -348,7 +348,7 @@
 25,電源／AI機櫃,台灣高關聯股,,聯茂6213★★★,聯茂,6213,3,False,343,6213,6213.TW
 26,電子製造／零組件,台灣核心股,,光寶科2301 ★★★★,光寶科,2301,4,False,344,2301,2301.TW
 26,電子製造／零組件,全球上游_供應,,電源／光電／零組件,電源 光電 零組件,,0,False,345,,
-26,電子製造／零組件,全球競爭_同業,,DELTA相關供應鏈,相關供應鏈,DELTA,0,False,346,DELTA,DELTA
+26,電子製造／零組件,全球競爭_同業,,DELTA相關供應鏈,相關供應鏈,DELTA,0,False,346,DELTA,
 26,電子製造／零組件,全球競爭_同業,,Lite-On全球同業,Lite-On全球同業,,0,False,347,,
 26,電子製造／零組件,全球合作_需求端,,AI Server／PC／消費電子,AI Server PC 消費電子,,0,False,348,,
 26,電子製造／零組件,台灣高關聯股,,台達電2308★★★★,台達電,2308,4,False,349,2308,2308.TW
@@ -362,7 +362,7 @@
 27,電子材料／零組件,台灣高關聯股,,廣運6125★★★,廣運,6125,3,False,357,6125,6125.TW
 28,電子零組件／連接器,台灣核心股,,川湖2059 ★★★★★,川湖,2059,5,False,358,2059,2059.TW
 28,電子零組件／連接器,全球上游_供應,,金屬件／滑軌零組件,金屬件 滑軌零組件,,0,False,359,,
-28,電子零組件／連接器,全球競爭_同業,,Accuride★★★,Accuride,ACW,3,False,360,ACW,ACW
+28,電子零組件／連接器,全球競爭_同業,,Accuride★★★,Accuride,ACW,3,False,360,ACW,
 28,電子零組件／連接器,全球合作_需求端,,AI Server／資料中心,AI Server 資料中心,,0,False,361,,
 28,電子零組件／連接器,台灣高關聯股,,勤誠8210★★★★,勤誠,8210,4,False,362,8210,8210.TW
 28,電子零組件／連接器,台灣高關聯股,,晟銘電3013★★★,晟銘電,3013,3,False,363,3013,3013.TW
@@ -375,7 +375,7 @@
 29,電子零組件／連接器,台灣高關聯股,,邁達特6112★★★,邁達特,6112,3,False,370,6112,6112.TW
 30,電子零組件,台灣核心股,,研華2395 ★★★★,研華,2395,4,False,371,2395,2395.TW
 30,電子零組件,全球上游_供應,,工業電腦零組件／Edge AI,工業電腦零組件 Edge AI,,0,False,372,,
-30,電子零組件,全球競爭_同業,,ADLINK相關,相關,ADLINK,0,False,373,ADLINK,ADLINK
+30,電子零組件,全球競爭_同業,,ADLINK相關,相關,ADLINK,0,False,373,ADLINK,
 30,電子零組件,全球競爭_同業,,Siemens★★★,Siemens,SIE.DE,3,False,374,SIE.DE,SIE.DE
 30,電子零組件,全球合作_需求端,,工控／Edge AI／智慧製造,工控 Edge AI 智慧製造,,0,False,375,,
 30,電子零組件,台灣高關聯股,,凌華6166★★★★,凌華,6166,4,False,376,6166,6166.TW
@@ -409,14 +409,14 @@
 33,矽電容／Silicon Capacitor,全球競爭_同業,,Murata 6981.T ★★★★,Murata,6981.T,4,False,404,6981.T,6981.T
 33,矽電容／Silicon Capacitor,全球競爭_同業,,TDK 6762.T ★★★★,TDK,6762.T,4,False,405,6762.T,6762.T
 33,矽電容／Silicon Capacitor,全球競爭_同業,,Samsung Electro-Mechanics 009150.KS ★★★★,Samsung Electro-Mechanics,009150.KS,4,False,406,009150.KS,009150.KS
-33,矽電容／Silicon Capacitor,全球合作_需求端,,AI/HPC先進封裝,AI/先進封裝,HPC,0,False,407,HPC,HPC
+33,矽電容／Silicon Capacitor,全球合作_需求端,,AI/HPC先進封裝,AI/先進封裝,HPC,0,False,407,HPC,
 33,矽電容／Silicon Capacitor,全球合作_需求端,,Chiplet,Chiplet,,0,False,408,,
 33,矽電容／Silicon Capacitor,全球合作_需求端,,HBM,,HBM,0,False,409,HBM,HBM
 33,矽電容／Silicon Capacitor,全球合作_需求端,,SoC電源完整性／高速I/O,SoC電源完整性 高速I/O,,0,False,410,,
 33,矽電容／Silicon Capacitor,台灣高關聯股,,愛普→產品/IP,愛普→產品/IP,,0,True,411,,
 33,矽電容／Silicon Capacitor,台灣高關聯股,,力積電→8/12吋代工,力積電→8/12吋代工,,0,True,412,,
-33,矽電容／Silicon Capacitor,台灣高關聯股,,聯電→DTC/橋接晶片,,DTC,0,True,413,DTC,DTC
-33,矽電容／Silicon Capacitor,台灣高關聯股,,華邦電→Foundry/PDK,,PDK,0,True,414,PDK,PDK
+33,矽電容／Silicon Capacitor,台灣高關聯股,,聯電→DTC/橋接晶片,,DTC,0,True,413,DTC,
+33,矽電容／Silicon Capacitor,台灣高關聯股,,華邦電→Foundry/PDK,,PDK,0,True,414,PDK,
 34,大電流連接器／AI電源,台灣核心股,,建準2421 ★★★★,建準,2421,4,False,415,2421,2421.TW
 34,大電流連接器／AI電源,台灣核心股,,新盛力4931 ★★★★,新盛力,4931,4,False,416,4931,4931.TW
 34,大電流連接器／AI電源,全球上游_供應,,電源模組／BBU／連接器材料,電源模組 BBU 連接器材料,,0,False,417,,
@@ -447,7 +447,7 @@
 37,InP光通訊代工,全球上游_供應,,InP磊晶／光通訊晶片,InP磊晶 光通訊晶片,,0,False,442,,
 37,InP光通訊代工,全球競爭_同業,,COHR★★★★,,COHR,4,False,443,COHR,COHR
 37,InP光通訊代工,全球競爭_同業,,LITE★★★★,,LITE,4,False,444,LITE,LITE
-37,InP光通訊代工,全球合作_需求端,,800G／1.6T／CPO光通訊,1.6T CPO光通訊,800G,0,False,445,800G,800G
+37,InP光通訊代工,全球合作_需求端,,800G／1.6T／CPO光通訊,1.6T CPO光通訊,800G,0,False,445,800G,
 37,InP光通訊代工,台灣高關聯股,,聯亞3081★★★★★,聯亞,3081,5,False,446,3081,3081.TW
 37,InP光通訊代工,台灣高關聯股,,華星光4979★★★★,華星光,4979,4,False,447,4979,4979.TW
 37,InP光通訊代工,台灣高關聯股,,聯鈞3450★★★★,聯鈞,3450,4,False,448,3450,3450.TW
