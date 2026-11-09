@@ -1,56 +1,56 @@
 {
-  "fetched_at": "2026-11-07T02:35:09.504204",
+  "fetched_at": "2026-11-09T02:26:41.495336",
   "results": {
     "ES": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "NQ": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "YM": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "RTY": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "N225": {
-      "daily": 59,
-      "weekly": 57,
+      "daily": 58,
+      "weekly": 58,
       "last_daily": "2026-11-06 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_weekly": "2026-11-09 00:00:00"
     },
     "HSI": {
-      "daily": 63,
-      "weekly": 57,
+      "daily": 62,
+      "weekly": 58,
       "last_daily": "2026-11-06 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_weekly": "2026-11-09 00:00:00"
     },
     "SSE": {
-      "daily": 59,
-      "weekly": 56,
+      "daily": 58,
+      "weekly": 57,
       "last_daily": "2026-11-06 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_weekly": "2026-11-09 00:00:00"
     },
     "DAX": {
-      "daily": 65,
+      "daily": 64,
       "weekly": 57,
       "last_daily": "2026-11-06 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "FTSE": {
-      "daily": 64,
+      "daily": 63,
       "weekly": 57,
       "last_daily": "2026-11-06 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
@@ -58,44 +58,44 @@
     "GC": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "SI": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "CL": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "NG": {
       "daily": 64,
       "weekly": 57,
-      "last_daily": "2026-11-06 00:00:00",
+      "last_daily": "2026-11-08 00:00:00",
       "last_weekly": "2026-11-02 00:00:00"
     },
     "BTC": {
       "daily": 90,
       "weekly": 58,
-      "last_daily": "2026-11-07 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_daily": "2026-11-09 00:00:00",
+      "last_weekly": "2026-11-09 00:00:00"
     },
     "ETH": {
       "daily": 90,
       "weekly": 58,
-      "last_daily": "2026-11-07 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_daily": "2026-11-09 00:00:00",
+      "last_weekly": "2026-11-09 00:00:00"
     },
     "USDTWD": {
       "daily": 65,
       "weekly": 58,
-      "last_daily": "2026-11-06 00:00:00",
-      "last_weekly": "2026-11-02 00:00:00"
+      "last_daily": "2026-11-09 00:00:00",
+      "last_weekly": "2026-11-09 00:00:00"
     }
   }
 }
